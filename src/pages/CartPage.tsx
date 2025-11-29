@@ -1,0 +1,298 @@
+import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Navbar } from '../components/Navbar';
+import { Footer } from '../components/Footer';
+import { Trash2, Minus, Plus } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { AuthContext } from '../App';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { toast } from 'sonner@2.0.3';
+
+export default function CartPage() {
+  const navigate = useNavigate();
+  const { user, accessToken } = useContext(AuthContext);
+
+  const [cart, setCart] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchCart();
+  }, [user]);
+
+  const fetchCart = async () => {
+    try {
+      const cartRes = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/cart`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      const cartData = await cartRes.json();
+      setCart(cartData.cart);
+
+      const productsRes = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/products`,
+        { headers: { Authorization: `Bearer ${publicAnonKey}` } }
+      );
+
+      const productsData = await productsRes.json();
+      setProducts(productsData.products || []);
+
+    } catch (error) {
+      console.error("Fetch cart error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateQuantity = async (productId: string, newQty: number) => {
+    if (newQty < 1) return;
+
+    const currentItem = cart.items.find((i: any) => i.productId === productId);
+
+    try {
+      await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/cart`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            productId,
+            quantity: newQty - currentItem.quantity,
+            size: currentItem.size,
+            color: currentItem.color
+          })
+        }
+      );
+
+      setCart({
+        ...cart,
+        items: cart.items.map((i: any) =>
+          i.productId === productId ? { ...i, quantity: newQty } : i
+        )
+      });
+
+    } catch {
+      toast.error("Failed to update quantity");
+    }
+  };
+
+  const removeItem = async (productId: string) => {
+    try {
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/cart/${productId}`,
+        { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        setCart(data.cart);
+        toast.success("Removed from cart");
+      }
+
+    } catch {
+      toast.error("Failed to remove item");
+    }
+  };
+
+  const getTotal = () => {
+    if (!cart?.items) return 0;
+
+    return cart.items.reduce((sum: number, item: any) => {
+      const product = products.find(p => p.id === item.productId);
+      return sum + (product?.price || 0) * item.quantity;
+    }, 0);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin h-12 w-12 rounded-full border-b-2" style={{ borderColor: "#14b8a6" }}></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const cartItems = cart?.items || [];
+  const isEmpty = cartItems.length === 0;
+
+  return (
+    <div className="min-h-screen bg-white">
+      <Navbar />
+
+      {/* Decorative Squares */}
+      <div className="flex justify-between max-w-7xl mx-auto px-4 pt-10">
+        <div className="flex gap-2">
+          <div className="w-10 h-10 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
+          <div className="w-10 h-10 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
+        </div>
+
+        <div className="flex gap-2">
+          <div className="w-10 h-10 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
+          <div className="w-10 h-10 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-12">
+
+        <h1 className="text-5xl font-bold text-gray-900 mb-12 text-center">
+          Your <span style={{ color: "#14b8a6" }}>Cart</span>
+        </h1>
+
+        {isEmpty ? (
+          <div className="text-center py-24">
+            <p className="text-xl text-gray-600 mb-6">Your cart is empty</p>
+
+            <button
+              onClick={() => navigate('/shop')}
+              className="px-10 py-3 rounded-xl text-white shadow-xl transition"
+              style={{ backgroundColor: "#14b8a6" }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#0d9488"}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "#14b8a6"}
+            >
+              Continue Shopping
+            </button>
+          </div>
+        ) : (
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* ---------------- LEFT SIDE — CART ITEMS ---------------- */}
+            <div className="lg:col-span-2 space-y-4">
+              {cartItems.map((item: any) => {
+                const product = products.find(p => p.id === item.productId);
+                if (!product) return null;
+
+                return (
+                  <div
+                    key={`${item.productId}-${item.size}-${item.color}`}
+                    className="bg-white rounded-lg p-4 shadow-sm border hover:shadow-lg transition"
+                    style={{ borderColor: "#e5e7eb" }}
+                  >
+                    <div className="flex gap-4">
+
+                      {/* Image - keep same size */}
+                      <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <ImageWithFallback
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{product.name}</h3>
+                        <p className="text-gray-600 mb-1">
+                          {item.color} • {item.size}
+                        </p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          ₹{product.price.toFixed(2)}
+                        </p>
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex flex-col items-end justify-between">
+
+                        <button
+                          onClick={() => removeItem(item.productId)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+
+                        <div
+                          className="flex items-center gap-2 border rounded-lg"
+                          style={{ borderColor: "#cbd5e1" }}
+                        >
+                          <button
+                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            className="p-2 hover:bg-gray-100"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+
+                          <span className="px-3 font-medium">{item.quantity}</span>
+
+                          <button
+                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            className="p-2 hover:bg-gray-100"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ---------------- RIGHT SIDE — ORDER SUMMARY ---------------- */}
+            <div className="lg:col-span-1">
+              <div
+                className="bg-white rounded-lg p-6 shadow-sm border sticky top-24"
+                style={{ borderColor: "#e5e7eb" }}
+              >
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Summary</h2>
+
+                <div className="space-y-3 text-gray-600 mb-6">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>₹{getTotal().toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Shipping</span>
+                    <span>{getTotal() > 1000 ? "Free" : "₹99"}</span>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-3">
+                    <div className="flex justify-between text-xl font-semibold text-gray-900">
+                      <span>Total</span>
+                      <span>
+                        ₹{(getTotal() + (getTotal() > 1000 ? 0 : 99)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => navigate('/checkout')}
+                  className="w-full px-6 py-3 rounded-xl text-white shadow-xl mb-3 transition"
+                  style={{ backgroundColor: "#14b8a6" }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = "#0d9488"}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = "#14b8a6"}
+                >
+                  Proceed to Checkout
+                </button>
+
+                <button
+                  onClick={() => navigate('/shop')}
+                  className="w-full border rounded-xl px-6 py-3 text-gray-700 hover:bg-gray-50 transition"
+                  style={{ borderColor: "#cbd5e1" }}
+                >
+                  Continue Shopping
+                </button>
+
+              </div>
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      <Footer />
+    </div>
+  );
+}

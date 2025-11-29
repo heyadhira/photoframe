@@ -1,0 +1,223 @@
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from './utils/supabase/info';
+import { Toaster } from 'sonner';
+
+
+// Pages
+import HomePage from './pages/HomePage';
+import ShopPage from './pages/ShopPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import UserAccountPage from './pages/UserAccountPage';
+import GalleryPage from './pages/GalleryPage';
+import AboutPage from './pages/AboutPage';
+import TestimonialsPage from './pages/TestimonialsPage';
+import SearchPage from './pages/SearchPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import AdminSignupPage from './pages/AdminSignupPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import InitPage from './pages/InitPage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminTestimonials from './pages/admin/AdminTestimonials';
+import AdminGallery from './pages/admin/AdminGallery';
+
+
+
+const supabase = createClient(
+  `https://${projectId}.supabase.co`,
+  publicAnonKey
+);
+
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+};
+
+export type AuthContextType = {
+  user: User | null;
+  accessToken: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+};
+
+export const AuthContext = React.createContext<AuthContextType>({
+  user: null,
+  accessToken: null,
+  login: async () => {},
+  signup: async () => {},
+  logout: async () => {},
+  isLoading: true,
+});
+
+function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session?.access_token) {
+        setAccessToken(session.access_token);
+        await fetchUser(session.access_token);
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUser = async (token: string) => {
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/auth/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      }
+    } catch (error) {
+      console.error('Fetch user error:', error);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    if (data.session) {
+      setAccessToken(data.session.access_token);
+      await fetchUser(data.session.access_token);
+    }
+  };
+
+  const signup = async (email: string, password: string, name: string) => {
+    const response = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/auth/signup`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${publicAnonKey}`,
+        },
+        body: JSON.stringify({ email, password, name }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Signup failed');
+    }
+
+    // Auto login after signup
+    await login(email, password);
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setAccessToken(null);
+  };
+
+  const authValue: AuthContextType = {
+    user,
+    accessToken,
+    login,
+    signup,
+    logout,
+    isLoading,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  return (
+    <AuthContext.Provider value={authValue}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+          <Route path="/account" element={<UserAccountPage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/testimonials" element={<TestimonialsPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/admin-signup" element={<AdminSignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/init" element={<InitPage />} />
+          
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/products"
+            element={user?.role === 'admin' ? <AdminProducts /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/orders"
+            element={user?.role === 'admin' ? <AdminOrders /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/users"
+            element={user?.role === 'admin' ? <AdminUsers /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/testimonials"
+            element={user?.role === 'admin' ? <AdminTestimonials /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/gallery"
+            element={user?.role === 'admin' ? <AdminGallery /> : <Navigate to="/login" />}
+          />
+        </Routes>
+      </BrowserRouter>
+      <Toaster position="top-right" />
+    </AuthContext.Provider>
+  );
+}
+
+export default App;
