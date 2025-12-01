@@ -300,10 +300,8 @@ export function Navbar() {
                 aria-label="Login"
                 title="Login"
                 className="hidden md:flex items-center justify-center bg-[#14b8a6] p-2 rounded-md transition"
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'}
               >
-                <User className="w-5 h-5 text-white" />
+                <User className="w-5 h-5 text-black" />
               </Link>
             )}
 
