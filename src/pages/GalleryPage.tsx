@@ -9,6 +9,7 @@ export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<any>(null);
   const [filter, setFilter] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     fetchGallery();
@@ -131,19 +132,31 @@ export default function GalleryPage() {
                     <div
                       key={item.id}
                       onClick={() => setSelectedImage(item)}
-                      className="group relative aspect-square bg-gray-200 rounded-xl overflow-hidden cursor-pointer shadow-md transition hover:shadow-xl"
+                      className="group relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden cursor-pointer shadow-md transition hover:shadow-xl"
                     >
+                      {imageLoading[item.id] !== false && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                          <div className="w-8 h-8 border-3 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
                       <img
                         src={item.image}
                         alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                        onLoad={() => setImageLoading(prev => ({...prev, [item.id]: false}))}
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/400x400?text=Image+Not+Found';
+                          setImageLoading(prev => ({...prev, [item.id]: false}));
+                        }}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 bg-white"
+                        style={{ display: imageLoading[item.id] === false ? 'block' : 'none' }}
                       />
 
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition">
-                        <div className="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition">
-                          <h3 className="text-lg font-semibold">{item.title}</h3>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                          <h3 className="text-lg font-semibold drop-shadow-lg">{item.title}</h3>
                           {item.description && (
-                            <p className="text-sm text-gray-200 mt-1">{item.description}</p>
+                            <p className="text-sm text-gray-200 mt-1 drop-shadow-md">{item.description}</p>
                           )}
                         </div>
                       </div>
@@ -173,12 +186,14 @@ export default function GalleryPage() {
             <X className="w-8 h-8" />
           </button>
 
-          <div className="max-w-5xl max-h-[90vh] text-center">
-            <img
-              src={selectedImage.image}
-              alt={selectedImage.title}
-              className="max-w-full max-h-[70vh] object-contain mx-auto mb-6"
-            />
+          <div className="max-w-5xl max-h-[90vh] text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="relative inline-block">
+              <img
+                src={selectedImage.image}
+                alt={selectedImage.title}
+                className="max-w-full max-h-[70vh] object-contain mx-auto mb-6 rounded-lg shadow-2xl"
+              />
+            </div>
 
             <h2 className="text-2xl text-white font-semibold mb-2">
               {selectedImage.title}

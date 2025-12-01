@@ -7,6 +7,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { AuthContext } from '../App';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
+import { cartEvents } from '../utils/cartEvents';
 
 export default function CartPage() {
   const navigate = useNavigate();

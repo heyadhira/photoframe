@@ -104,7 +104,7 @@ export default function AdminTestimonials() {
       <AdminSidebar />
 
       {/* Main Content */}
-      <div className="ml-64 w-full p-8">
+      <div className="md:ml-64 w-full p-4 md:p-8">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-semibold text-gray-900">

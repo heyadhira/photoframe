@@ -44,7 +44,7 @@ export default function AdminUsers() {
     <div className="min-h-screen bg-gray-100 flex">
       <AdminSidebar />
 
-      <div className="ml-64 w-full p-8">
+      <div className="md:ml-64 w-full p-4 md:p-8">
         <h1 className="text-3xl font-semibold text-gray-900 mb-6">
           Manage Users
         </h1>

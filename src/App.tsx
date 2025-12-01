@@ -29,6 +29,10 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminGallery from './pages/admin/AdminGallery';
+import AdminPayments from './pages/admin/AdminPayments';
+import AdminDelivery from './pages/admin/AdminDelivery';
+import DecorByRoomPage from './pages/DecorByRoomPage';
+import { WhatsappButton } from './components/WhatsappButton';
 
 
 
@@ -180,7 +184,7 @@ function App() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/testimonials" element={<TestimonialsPage />} />
-          <Route path="/search" element={<SearchPage />} />
+          <Route path="/search" element={<SearchPage />} />`n          <Route path="/decor-by-room" element={<DecorByRoomPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/admin-signup" element={<AdminSignupPage />} />
@@ -213,7 +217,16 @@ function App() {
             path="/admin/gallery"
             element={user?.role === 'admin' ? <AdminGallery /> : <Navigate to="/login" />}
           />
+          <Route
+            path="/admin/payments"
+            element={user?.role === 'admin' ? <AdminPayments /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/delivery"
+            element={user?.role === 'admin' ? <AdminDelivery /> : <Navigate to="/login" />}
+          />
         </Routes>
+        <WhatsappButton />
       </BrowserRouter>
       <Toaster position="top-right" />
     </AuthContext.Provider>

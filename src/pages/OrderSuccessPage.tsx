@@ -51,54 +51,146 @@ export default function OrderSuccessPage() {
     if (!order) return;
 
     const doc = new jsPDF();
+
+    // Header - Company Name
     doc.setFont("Helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(20, 184, 166); // Teal color
+    doc.text("DECORIZZ", 14, 20);
 
-    doc.setFontSize(22);
-    doc.text("Decorizz Invoice", 14, 20);
+    // Invoice Title
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.text("INVOICE", 14, 32);
 
+    // Horizontal line
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.5);
+    doc.line(14, 36, 196, 36);
+
+    // Order Details
     doc.setFont("Helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Order ID: ${order.id}`, 14, 45);
+    doc.text(`Payment Status: ${order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}`, 14, 52);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })}`, 14, 59);
+
+    // Shipping Address Section
+    doc.setFont("Helvetica", "bold");
     doc.setFontSize(12);
+    doc.text("Shipping Address:", 14, 72);
 
-    doc.text(`Order ID: ${order.id}`, 14, 35);
-    doc.text(`Payment Status: ${order.paymentStatus}`, 14, 42);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 49);
-
-    // Shipping Address
-    doc.setFont("Helvetica", "bold");
-    doc.text("Shipping Address:", 14, 65);
     doc.setFont("Helvetica", "normal");
+    doc.setFontSize(11);
+    const addressLines = [
+      order.shippingAddress.fullName || 'N/A',
+      order.shippingAddress.phone || 'N/A',
+      order.shippingAddress.address || 'N/A',
+      `${order.shippingAddress.city || 'N/A'}, ${order.shippingAddress.state || 'N/A'} - ${order.shippingAddress.zipCode || 'N/A'}`
+    ];
 
-    doc.text(
-      `${order.shippingAddress.fullName}
-${order.shippingAddress.address}
-${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zipCode}`,
-      14,
-      72
-    );
+    let yPos = 80;
+    addressLines.forEach(line => {
+      doc.text(line, 14, yPos);
+      yPos += 7;
+    });
 
-    // Table
+    // Items Table
     const items = order.items.map((item: any) => [
-      item.productName,
-      item.size,
-      item.color,
-      item.quantity,
-      `₹${item.price}`,
-      `₹${item.price * item.quantity}`,
+      item.productName || 'Product',
+      item.size || 'N/A',
+      item.color || 'N/A',
+      item.quantity.toString(),
+      `Rs. ${item.price.toFixed(2)}`,
+      `Rs. ${(item.price * item.quantity).toFixed(2)}`,
     ]);
 
     autoTable(doc, {
-      startY: 115,
+      startY: yPos + 5,
       head: [["Product", "Size", "Color", "Qty", "Price", "Total"]],
       body: items,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [20, 184, 166], // Teal
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 11,
+        halign: 'left',
+      },
+      bodyStyles: {
+        fontSize: 10,
+        textColor: [31, 41, 55],
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251],
+      },
+      columnStyles: {
+        0: { cellWidth: 65 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 15, halign: 'center' },
+        4: { cellWidth: 32, halign: 'right' },
+        5: { cellWidth: 34, halign: 'right' },
+      },
+      margin: { left: 14, right: 14 },
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
 
-    doc.text(`Subtotal: ₹${order.subtotal}`, 14, finalY);
-    doc.text(`Shipping: ₹${order.shipping}`, 14, finalY + 7);
-    doc.text(`Grand Total: ₹${order.total}`, 14, finalY + 14);
+    // Summary Box Background
+    doc.setFillColor(249, 250, 251);
+    doc.rect(120, finalY - 5, 76, 30, 'F');
 
-    doc.save(`invoice-${order.id}.pdf`);
+    // Summary Section
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(75, 85, 99);
+
+    const labelX = 125;
+    const valueX = 191;
+
+    doc.text("Subtotal:", labelX, finalY + 3);
+    doc.text(`Rs. ${order.subtotal.toFixed(2)}`, valueX, finalY + 3, { align: 'right' });
+
+    doc.text("Shipping:", labelX, finalY + 10);
+    doc.text(order.shipping === 0 ? 'Free' : `Rs. ${order.shipping.toFixed(2)}`, valueX, finalY + 10, { align: 'right' });
+
+    // Separator line
+    doc.setDrawColor(209, 213, 219);
+    doc.setLineWidth(0.3);
+    doc.line(125, finalY + 14, 191, finalY + 14);
+
+    // Grand Total
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(20, 184, 166);
+    doc.text("Grand Total:", labelX, finalY + 21);
+    doc.text(`Rs. ${order.total.toFixed(2)}`, valueX, finalY + 21, { align: 'right' });
+
+    // Footer Section
+    const footerY = 270;
+
+    // Footer background
+    doc.setFillColor(31, 41, 55);
+    doc.rect(0, footerY, 210, 27, 'F');
+
+    // Footer text
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Thank you for shopping with Decorizz!", 105, footerY + 8, { align: 'center' });
+
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(209, 213, 219);
+    doc.text("For support, contact us at support@decorizz.com", 105, footerY + 14, { align: 'center' });
+    doc.text("www.decorizz.com", 105, footerY + 19, { align: 'center' });
+
+    doc.save(`Decorizz-Invoice-${order.id}.pdf`);
   };
 
   if (loading) {

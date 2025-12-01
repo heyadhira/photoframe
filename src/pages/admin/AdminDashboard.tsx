@@ -115,7 +115,7 @@ export default function AdminDashboard() {
       <AdminSidebar />
 
       {/* MAIN CONTENT */}
-      <div className="ml-64 w-full p-10">
+      <div className="md:ml-64 w-full p-4 md:p-10 pt-20 md:pt-10">
 
         {/* PAGE TITLE */}
         <h1 className="text-4xl font-bold text-gray-900 mb-10 tracking-tight">

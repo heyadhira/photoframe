@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../../App";
 
@@ -9,81 +9,130 @@ import {
   Users,
   Star,
   Image as GalleryIcon,
+  CreditCard,
+  Truck,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
 
-const menuItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { label: "Products", icon: Package, path: "/admin/products" },
-  { label: "Orders", icon: ShoppingBag, path: "/admin/orders" },
-  { label: "Users", icon: Users, path: "/admin/users" },
-  { label: "Gallery", icon: GalleryIcon, path: "/admin/gallery" },
-  { label: "Testimonials", icon: Star, path: "/admin/testimonials" },
-];
+interface AdminSidebarProps {
+  onSidebarWidthChange?: (width: number) => void;
+}
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps) {
   const { logout } = useContext(AuthContext);
   const location = useLocation();
-  const [open, setOpen] = useState(false);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Auto detect screen size
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+
+      if (mobile) {
+        setMobileOpen(false);
+      }
+
+      if (!mobile && onSidebarWidthChange) {
+        onSidebarWidthChange(collapsed ? 80 : 256);
+      }
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [collapsed]);
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setCollapsed(!collapsed);
+      if (onSidebarWidthChange) {
+        onSidebarWidthChange(!collapsed ? 80 : 256);
+      }
+    }
+  };
+
+  const menuItems = [
+    { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+    { label: "Products", icon: Package, path: "/admin/products" },
+    { label: "Orders", icon: ShoppingBag, path: "/admin/orders" },
+    { label: "Users", icon: Users, path: "/admin/users" },
+    { label: "Gallery", icon: GalleryIcon, path: "/admin/gallery" },
+    { label: "Payments", icon: CreditCard, path: "/admin/payments" },
+    { label: "Delivery", icon: Truck, path: "/admin/delivery" },
+    { label: "Testimonials", icon: Star, path: "/admin/testimonials" },
+  ];
 
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* TOGGLE BUTTON */}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 bg-gray-900 text-white p-3 rounded-lg shadow-lg"
-        onClick={() => setOpen(true)}
+        onClick={toggleSidebar}
+        className="fixed top-4 left-4 z-50 bg-gray-900 text-white p-3 rounded-lg shadow-lg"
       >
-        <Menu className="w-6 h-6" />
+        {isMobile && mobileOpen ? <X /> : <Menu />}
       </button>
 
-      {/* Overlay */}
-      {open && (
+      {/* MOBILE OVERLAY */}
+      {isMobile && mobileOpen && (
         <div
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-        />
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileOpen(false)}
+        ></div>
       )}
 
       {/* SIDEBAR */}
       <aside
         className={`
-          fixed inset-y-0 left-0 w-64 bg-gray-900 text-white shadow-xl z-50
-          transition-transform duration-300
-          ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          fixed inset-y-0 left-0 bg-gray-900 text-white shadow-xl z-50
+          transition-all duration-300 flex flex-col
+          ${
+            isMobile
+              ? mobileOpen
+                ? "sidebar-mobile-shown w-64"
+                : "sidebar-mobile-hidden w-64"
+              : collapsed
+              ? "sidebar-desktop-mini"
+              : "sidebar-desktop-full"
+          }
         `}
       >
         {/* HEADER */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-xl font-semibold">Admin Panel</h2>
+          {!collapsed && <h2 className="text-xl font-semibold">Admin Panel</h2>}
 
-          {/* Close on mobile */}
-          <button
-            className="md:hidden text-gray-300"
-            onClick={() => setOpen(false)}
-          >
-            <X className="w-6 h-6" />
-          </button>
+          {isMobile && (
+            <X
+              className="w-6 h-6 text-gray-300 cursor-pointer"
+              onClick={() => setMobileOpen(false)}
+            />
+          )}
         </div>
 
         {/* MENU ITEMS */}
-        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
           {menuItems.map(({ label, icon: Icon, path }) => {
             const active = location.pathname === path;
+
             return (
               <Link
                 key={path}
                 to={path}
-                onClick={() => setOpen(false)}
+                onClick={() => isMobile && setMobileOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                   active
                     ? "bg-blue-600 text-white"
                     : "text-gray-300 hover:bg-gray-800"
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                {label}
+                <Icon className="menu-icon w-5 h-5" />
+                <span className="menu-label">{label}</span>
               </Link>
             );
           })}
@@ -95,8 +144,8 @@ export default function AdminSidebar() {
             onClick={logout}
             className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition"
           >
-            <LogOut className="w-5 h-5" />
-            Logout
+            <LogOut className="menu-icon w-5 h-5" />
+            <span className="menu-label">Logout</span>
           </button>
         </div>
       </aside>

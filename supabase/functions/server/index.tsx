@@ -299,43 +299,6 @@ app.get('/make-server-52d68140/products/:id', async (c) => {
   }
 });
 
-
-// Product Image Upload
-app.post('/make-server-52d68140/products/upload', async (c) => {
-  try {
-    const user = await verifyAuth(c.req.raw);
-    if (!user) return c.json({ error: 'Unauthorized' }, 401);
-
-    const formData = await c.req.formData();
-    const file = formData.get('file') as File;
-
-    if (!file) return c.json({ error: 'No file provided' }, 400);
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `products/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-
-    const { data, error } = await supabase.storage
-      .from('make-52d68140-gallery')
-      .upload(fileName, buffer, { contentType: file.type });
-
-    if (error) {
-      console.log('Upload error:', error);
-      return c.json({ error: 'Upload failed' }, 500);
-    }
-
-    const { data: urlData } = supabase.storage
-      .from('make-52d68140-gallery')
-      .getPublicUrl(fileName);
-
-    return c.json({ success: true, url: urlData.publicUrl });
-  } catch (error) {
-    console.log('Upload error:', error);
-    return c.json({ error: 'Upload failed' }, 500);
-  }
-});
 app.post('/make-server-52d68140/products', async (c) => {
   try {
     const user = await verifyAuth(c.req.raw);
@@ -524,95 +487,6 @@ app.post('/make-server-52d68140/wishlist', async (c) => {
   }
 });
 
-
-// Email notification function
-async function sendOrderEmail(orderData: any, userEmail: string) {
-  try {
-    const emailContent = {
-      from: 'Decorizz Orders <onboarding@resend.dev>',
-      to: 'adhirasudhir@gmail.com', // Send to admin email
-      reply_to: userEmail, // Customer can reply directly
-      subject: `🎉 New Order Received - ${orderData.id}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%); padding: 30px; text-align: center;">
-            <h1 style="color: white; margin: 0;">🎉 New Order Received!</h1>
-          </div>
-          
-          <div style="padding: 30px; background: #f9fafb;">
-            <h2 style="color: #1f2937; margin-top: 0;">Order Details</h2>
-            
-            <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <p style="margin: 10px 0;"><strong>Order ID:</strong> ${orderData.id}</p>
-              <p style="margin: 10px 0;"><strong>Customer Email:</strong> ${userEmail}</p>
-              <p style="margin: 10px 0;"><strong>Total Amount:</strong> &#8377;${orderData.total?.toFixed(2)}</p>
-              <p style="margin: 10px 0;"><strong>Payment Status:</strong> <span style="color: ${orderData.paymentStatus === 'completed' ? '#10b981' : '#f59e0b'}; text-transform: capitalize;">${orderData.paymentStatus}</span></p>
-              <p style="margin: 10px 0;"><strong>Order Date:</strong> ${new Date(orderData.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
-            </div>
-
-            <h3 style="color: #1f2937;">Shipping Address</h3>
-            <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <p style="margin: 5px 0;"><strong>${orderData.shippingAddress?.name || 'N/A'}</strong></p>
-              <p style="margin: 5px 0;">${orderData.shippingAddress?.phone || 'N/A'}</p>
-              <p style="margin: 5px 0;">${orderData.shippingAddress?.address || 'N/A'}</p>
-              <p style="margin: 5px 0;">${orderData.shippingAddress?.city || 'N/A'}, ${orderData.shippingAddress?.state || 'N/A'} - ${orderData.shippingAddress?.zipCode || 'N/A'}</p>
-            </div>
-
-            <h3 style="color: #1f2937;">Order Items</h3>
-            <div style="background: white; padding: 20px; border-radius: 8px;">
-              ${orderData.items?.map((item: any) => `
-                <div style="border-bottom: 1px solid #e5e7eb; padding: 15px 0;">
-                  <p style="margin: 5px 0;"><strong>${item.name || 'Product'}</strong></p>
-                  <p style="margin: 5px 0; color: #6b7280;">Size: ${item.size || 'N/A'} | Color: ${item.color || 'N/A'}</p>
-                  <p style="margin: 5px 0;">Quantity: ${item.quantity} &times; &#8377;${item.price} = &#8377;${(item.quantity * item.price).toFixed(2)}</p>
-                </div>
-              `).join('') || '<p>No items</p>'}
-            </div>
-
-            <div style="margin-top: 30px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
-              <p style="margin: 0; color: #92400e;"><strong>&#9889; Action Required:</strong> Please process this order in the admin panel.</p>
-            </div>
-          </div>
-
-          <div style="background: #1f2937; padding: 20px; text-align: center; color: white;">
-            <p style="margin: 0;">&copy; 2024 Decorizz. All rights reserved.</p>
-          </div>
-        </div>
-      `
-    };
-
-    // Log email content
-    console.log('📧 Sending email notification to:', emailContent.to);
-
-    // Send email via Resend
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(emailContent)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('Resend API error:', result);
-        return false;
-      }
-
-      console.log('✅ Email sent successfully:', result.id);
-      return true;
-    } catch (emailError) {
-      console.error('Failed to send email via Resend:', emailError);
-      return false;
-    }
-  } catch (error) {
-    console.error('Email send error:', error);
-    return false;
-  }
-}
 // Orders Routes
 app.post('/make-server-52d68140/orders', async (c) => {
   try {
@@ -628,8 +502,8 @@ app.post('/make-server-52d68140/orders', async (c) => {
       id: orderId,
       userId: user.id,
       ...orderData,
-      status: orderData.status || 'pending',
-      paymentStatus: orderData.paymentStatus || 'pending',
+      status: 'pending',
+      paymentStatus: 'pending',
       createdAt: new Date().toISOString(),
     };
     
@@ -660,11 +534,7 @@ app.post('/make-server-52d68140/orders', async (c) => {
         { orderId, userId: user.id, total: orderData.total }
       );
     }
-
-    // Send email notification
-    const userProfile = await kv.get(`user:${user.id}`);
-    await sendOrderEmail(order, userProfile?.email || 'customer@example.com');
-
+    
     return c.json({ success: true, order });
   } catch (error) {
     console.log('Create order error:', error);
@@ -1210,99 +1080,4 @@ app.delete('/make-server-52d68140/gallery/:id', async (c) => {
 });
 
 
-Deno.serve(app.fetch);// Add these routes before Deno.serve(app.fetch); in index.tsx
-
-// Payment Routes
-app.get('/make-server-52d68140/payments', async (c) => {
-  try {
-    const user = await verifyAuth(c.req.raw);
-    if (!user) return c.json({ error: 'Unauthorized' }, 401);
-
-    const userProfile = await kv.get(`user:${user.id}`);
-    if (!userProfile || userProfile.role !== 'admin') {
-      return c.json({ error: 'Admin access required' }, 403);
-    }
-
-    const payments = await kv.getByPrefix('payment:');
-    return c.json({ payments: payments || [] });
-  } catch (error) {
-    console.log('Get payments error:', error);
-    return c.json({ error: 'Failed to fetch payments' }, 500);
-  }
-});
-
-app.post('/make-server-52d68140/payments', async (c) => {
-  try {
-    const user = await verifyAuth(c.req.raw);
-    if (!user) return c.json({ error: 'Unauthorized' }, 401);
-
-    const paymentData = await c.req.json();
-    const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-
-    const payment = {
-      id: paymentId,
-      userId: user.id,
-      orderId: paymentData.orderId,
-      amount: paymentData.amount,
-      paymentMethod: paymentData.paymentMethod || 'razorpay',
-      paymentId: paymentData.paymentId || '',
-      paymentSignature: paymentData.paymentSignature || '',
-      status: paymentData.status || 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    await kv.set(`payment:${paymentId}`, payment);
-
-    if (paymentData.orderId) {
-      const order = await kv.get(`order:${paymentData.orderId}`);
-      if (order) {
-        order.paymentStatus = payment.status;
-        order.paymentId = paymentId;
-        await kv.set(`order:${paymentData.orderId}`, order);
-      }
-    }
-
-    return c.json({ success: true, payment });
-  } catch (error) {
-    console.log('Create payment error:', error);
-    return c.json({ error: 'Failed to create payment' }, 500);
-  }
-});
-
-app.put('/make-server-52d68140/payments/:id', async (c) => {
-  try {
-    const user = await verifyAuth(c.req.raw);
-    if (!user) return c.json({ error: 'Unauthorized' }, 401);
-
-    const userProfile = await kv.get(`user:${user.id}`);
-    if (!userProfile || userProfile.role !== 'admin') {
-      return c.json({ error: 'Admin access required' }, 403);
-    }
-
-    const id = c.req.param('id');
-    const payment = await kv.get(`payment:${id}`);
-
-    if (!payment) {
-      return c.json({ error: 'Payment not found' }, 404);
-    }
-
-    const updates = await c.req.json();
-    const updatedPayment = { ...payment, ...updates, updatedAt: new Date().toISOString() };
-
-    await kv.set(`payment:${id}`, updatedPayment);
-
-    if (updates.status && payment.orderId) {
-      const order = await kv.get(`order:${payment.orderId}`);
-      if (order) {
-        order.paymentStatus = updates.status;
-        await kv.set(`order:${payment.orderId}`, order);
-      }
-    }
-
-    return c.json({ success: true, payment: updatedPayment });
-  } catch (error) {
-    console.log('Update payment error:', error);
-    return c.json({ error: 'Failed to update payment' }, 500);
-  }
-});
-
+Deno.serve(app.fetch);

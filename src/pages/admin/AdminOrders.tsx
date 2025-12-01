@@ -69,7 +69,7 @@ export default function AdminOrders() {
       <AdminSidebar />
 
       {/* Main Content */}
-      <div className="ml-64 w-full p-8">
+      <div className="md:ml-64 w-full p-4 md:p-8">
         <h1 className="text-3xl font-semibold text-gray-900 mb-8">
           Manage Orders
         </h1>

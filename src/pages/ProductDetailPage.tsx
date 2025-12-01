@@ -8,6 +8,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { AuthContext } from '../App';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
+import { cartEvents } from '../utils/cartEvents';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -108,6 +109,7 @@ export default function ProductDetailPage() {
 
       if (response.ok) {
         toast.success('Added to cart');
+        cartEvents.emit();
       } else {
         toast.error('Failed to add to cart');
       }

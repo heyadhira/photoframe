@@ -2274,3 +2274,52 @@ html {
   font-weight: 600;
   color: var(--primary);
 }
+
+
+/* Import UI Improvements */
+
+/* Dropdown Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* MOBILE SIDEBAR (Tailwind v4 translate logic) */
+.sidebar-mobile-hidden {
+  --tw-translate-x: -100%;
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+}
+
+.sidebar-mobile-shown {
+  --tw-translate-x: 0;
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+}
+
+/* DESKTOP WIDTH STATES */
+.sidebar-desktop-full {
+  width: 256px;
+}
+
+.sidebar-desktop-mini {
+  width: 80px;
+}
+
+/* LABEL VISIBILITY IN MINI MODE */
+.sidebar-desktop-mini .menu-label {
+  display: none;
+}
+
+.sidebar-desktop-mini .menu-icon {
+  margin-left: auto;
+  margin-right: auto;
+}

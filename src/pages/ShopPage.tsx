@@ -7,24 +7,24 @@ import { Filter, X, ChevronDown } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 const ROOM_OPTIONS = [
-  { name: 'Home Bar', count: 1 },
-  { name: 'Bath Space', count: 4 },
-  { name: 'Bedroom', count: 7 },
-  { name: 'Dining Area', count: 2 },
-  { name: 'Game Zone / Lounge Cave', count: 7 },
-  { name: 'Workshop / Garage Space', count: 2 },
-  { name: 'Fitness Room', count: 3 },
-  { name: 'Entryway / Corridor', count: 6 },
-  { name: 'Kids Space', count: 4 },
-  { name: 'Kitchen', count: 1 },
-  { name: 'Living Area', count: 9 },
-  { name: 'Office / Study Zone', count: 4 },
-  { name: 'Pooja room', count: 1 },
+  { name: 'Home Bar' },
+  { name: 'Bath Space' },
+  { name: 'Bedroom' },
+  { name: 'Dining Area' },
+  { name: 'Game Zone / Lounge Cave' },
+  { name: 'Workshop / Garage Space' },
+  { name: 'Fitness Room' },
+  { name: 'Entryway / Corridor' },
+  { name: 'Kids Space' },
+  { name: 'Kitchen' },
+  { name: 'Living Area' },
+  { name: 'Office / Study Zone' },
+  { name: 'Pooja Room' },
 ];
 
 const LAYOUT_OPTIONS = ['Portrait', 'Square', 'Landscape'];
 const SIZE_OPTIONS = ['8×12', '12×18', '18×24', '20×30', '24×36', '30×40', '36×48'];
-const COLOR_OPTIONS = ['White', 'Black', 'Wood', 'Gold', 'Silver', 'Brown'];
+const COLOR_OPTIONS = ['White', 'Black', 'Wood', 'Gold', 'Brown', 'silver'];
 const MATERIAL_OPTIONS = ['Wood', 'Metal', 'Plastic', 'Glass'];
 const CATEGORY_OPTIONS = [
   { name: 'Home Decor', count: 3 },
@@ -46,8 +46,10 @@ interface Product {
   price: number;
   image: string;
   room?: string;
+  roomCategory?: string;
   layout?: string;
   size?: string;
+  sizes?: string[];
   colors?: string[];
   material?: string;
   category?: string;
@@ -112,11 +114,24 @@ export default function ShopPage() {
     }
   };
 
+  const getRoomCounts = () => {
+    const counts: { [key: string]: number } = {};
+    products.forEach(p => {
+      const room = p.roomCategory || p.room;
+      if (room) {
+        counts[room] = (counts[room] || 0) + 1;
+      }
+    });
+    return counts;
+  };
+
+  const roomCounts = getRoomCounts();
+
   const applyFilters = () => {
     let result = [...products];
 
     if (filters.rooms.length > 0) {
-      result = result.filter(p => filters.rooms.includes(p.room || ''));
+      result = result.filter(p => filters.rooms.includes(p.roomCategory || p.room || ''));
     }
 
     if (filters.layouts.length > 0) {
@@ -124,7 +139,12 @@ export default function ShopPage() {
     }
 
     if (filters.sizes.length > 0) {
-      result = result.filter(p => filters.sizes.includes(p.size || ''));
+      result = result.filter(p => {
+        if (Array.isArray(p.sizes)) {
+          return p.sizes.some(s => filters.sizes.includes(s));
+        }
+        return filters.sizes.includes(p.size || '');
+      });
     }
 
     if (filters.colors.length > 0) {
@@ -204,24 +224,41 @@ export default function ShopPage() {
           <h1 className="text-3xl lg:text-4xl" style={{ fontWeight: 700, color: '#1f2937' }}>
             Shop All Frames
           </h1>
-          <button
+          {/* <button
             onClick={() => setShowFilters(!showFilters)}
-            className="lg:hidden flex items-center gap-2 bg-white px-4 py-2 rounded-lg border transition"
-            style={{ borderColor: '#e5e7eb' }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#14b8a6'}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-          >
+            className="lg:hidden flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-500 text-black px-6 py-4 rounded-xl shadow-lg hover:from-teal-600 hover:to-blue-600 transition-all transform active:scale-95 "
+            >
             <Filter className="w-5 h-5" />
-            <span style={{ fontWeight: 500 }}>Filters</span>
+            <span className="font-semibold">Filters</span>
             {activeFilterCount > 0 && (
-              <span 
-                className="ml-2 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                style={{ backgroundColor: '#14b8a6' }}
-              >
+              <span className="ml-1 bg-white text-teal-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button> */}
+
+          <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="lg:hidden flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-500 text-black px-6 py-4 rounded-xl shadow-lg hover:from-teal-600 hover:to-blue-600 transition-all transform active:scale-95 rounded-lg"
+                  style={{
+                    backgroundColor: '#14b8a6',
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'}
+                >
+                  <Filter className="w-5 h-5" />
+                  <span className="font-semibold">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="ml-1 bg-black text-teal-600 text-xs px-2 py-0.5 rounded-lg font-bold">
                 {activeFilterCount}
               </span>
             )}
           </button>
+
+
+
         </div>
 
         <div className="flex gap-8">
@@ -229,20 +266,43 @@ export default function ShopPage() {
           <div
             className={`${
               showFilters ? 'block' : 'hidden'
-            } lg:block fixed lg:static inset-0 lg:inset-auto z-40 lg:z-auto bg-gray-50 lg:bg-transparent`}
+            } lg:block fixed lg:static inset-0 lg:inset-auto z-50 lg:z-auto`}
           >
-            <div className="lg:w-64 bg-white rounded-lg shadow-sm p-6 h-screen lg:h-auto overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl" style={{ fontWeight: 700, color: '#1f2937' }}>
-                  Filters
-                </h2>
+            {/* Mobile Overlay */}
+            <div 
+              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowFilters(false)}
+            ></div>
+
+            {/* Filter Panel */}
+            <div className="lg:w-64 bg-white rounded-t-3xl lg:rounded-lg shadow-2xl lg:shadow-sm fixed lg:static bottom-0 left-0 right-0 lg:inset-auto max-h-[85vh] lg:max-h-none overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-teal-50 to-blue-50 lg:bg-white">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-teal-500 to-blue-500 rounded-lg lg:hidden">
+                    <Filter className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Filters
+                  </h2>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-teal-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="lg:hidden"
+                  className="lg:hidden p-2 hover:bg-white/50 rounded-full transition"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-6 h-6 text-gray-700" />
                 </button>
+
+                
               </div>
+
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto flex-1 p-6 custom-scrollbar">
 
               {/* Room Filter */}
               <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
@@ -260,21 +320,26 @@ export default function ShopPage() {
                 </button>
                 {expandedSections.room && (
                   <div className="space-y-2">
-                    {ROOM_OPTIONS.map(room => (
-                      <label key={room.name} className="flex items-center cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={filters.rooms.includes(room.name)}
-                          onChange={() => toggleFilter('rooms', room.name)}
-                          className="mr-2"
-                          style={{ accentColor: '#14b8a6' }}
-                        />
-                        <span className="text-gray-700 text-sm group-hover:text-teal-600 transition">
-                          {room.name}
-                        </span>
-                        <span className="ml-auto text-xs text-gray-500">({room.count})</span>
-                      </label>
-                    ))}
+                    {ROOM_OPTIONS.map(room => {
+                      const count = roomCounts[room.name] || 0;
+                      return (
+                        <label key={room.name} className="flex items-center cursor-pointer group py-2 px-3 rounded-lg hover:bg-teal-50 transition">
+                          <input
+                            type="checkbox"
+                            checked={filters.rooms.includes(room.name)}
+                            onChange={() => toggleFilter('rooms', room.name)}
+                            className="mr-3 w-5 h-5"
+                            style={{ accentColor: '#14b8a6' }}
+                          />
+                          <span className="text-gray-700 text-sm group-hover:text-teal-600 transition flex-1">
+                            {room.name}
+                          </span>
+                          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {count}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -299,12 +364,12 @@ export default function ShopPage() {
                       <button
                         key={layout}
                         onClick={() => toggleFilter('layouts', layout)}
-                        className="px-3 py-1 rounded-full border text-sm transition"
+                        className="px-5 py-2.5 rounded-xl border-2 text-sm transition-all transform active:scale-95"
                         style={{
                           backgroundColor: filters.layouts.includes(layout) ? '#14b8a6' : 'white',
                           color: filters.layouts.includes(layout) ? 'white' : '#374151',
                           borderColor: filters.layouts.includes(layout) ? '#14b8a6' : '#d1d5db',
-                          fontWeight: 500
+                          fontWeight: 600
                         }}
                       >
                         {layout}
@@ -334,12 +399,12 @@ export default function ShopPage() {
                       <button
                         key={size}
                         onClick={() => toggleFilter('sizes', size)}
-                        className="px-2 py-1 rounded-full border text-xs transition"
+                        className="px-4 py-2 rounded-xl border-2 text-sm transition-all transform active:scale-95"
                         style={{
                           backgroundColor: filters.sizes.includes(size) ? '#14b8a6' : 'white',
                           color: filters.sizes.includes(size) ? 'white' : '#374151',
                           borderColor: filters.sizes.includes(size) ? '#14b8a6' : '#d1d5db',
-                          fontWeight: 500
+                          fontWeight: 600
                         }}
                       >
                         {size}
@@ -482,11 +547,10 @@ export default function ShopPage() {
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
-                  className="w-full py-2 rounded-lg transition"
+                  className="w-full py-3 rounded-lg transition font-semibold"
                   style={{
                     backgroundColor: '#f3f4f6',
                     color: '#374151',
-                    fontWeight: 600
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#e5e7eb';
@@ -495,9 +559,35 @@ export default function ShopPage() {
                     e.currentTarget.style.backgroundColor = '#f3f4f6';
                   }}
                 >
-                  Clear Filters
+                  Clear All Filters
                 </button>
               )}
+              </div>
+
+              {/* Mobile Action Buttons */}
+              <div className="lg:hidden p-4 border-t bg-white flex gap-3">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition"
+                >
+                  Clear
+                </button>
+
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="mt-5 px-6 py-2 rounded-lg transition"
+                  style={{
+                    backgroundColor: '#14b8a6',
+                    color: 'white',
+                    fontWeight: 500
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'}
+                >
+                  Show {filteredProducts.length} Products
+                </button>
+                
+              </div>
             </div>
           </div>
 

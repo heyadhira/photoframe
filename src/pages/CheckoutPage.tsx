@@ -5,6 +5,7 @@ import { Footer } from '../components/Footer';
 import { CreditCard, Smartphone, Wallet } from 'lucide-react';
 import { AuthContext } from '../App';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { RAZORPAY_CONFIG } from '../config/razorpay';
 import { toast } from 'sonner@2.0.3';
 
 export default function CheckoutPage() {
@@ -101,42 +102,79 @@ export default function CheckoutPage() {
     }
 
     const options = {
-      key: 'rzp_test_RbFD9b67kdd1Br', // Razorpay Key ID
+      key: RAZORPAY_CONFIG.KEY_ID,
       amount: totalAmount * 100, // Amount in paise
       currency: 'INR',
-      name: 'Decorizz',
+      name: RAZORPAY_CONFIG.COMPANY_NAME,
       description: 'Photo Frame Purchase',
-      image: '/logo.png',
+      image: RAZORPAY_CONFIG.COMPANY_LOGO,
       handler: async function (response: any) {
-        // Payment successful
+        // Payment successful - Show loader
+        setProcessing(true);
+        toast.loading('Processing your order...');
         console.log('Payment successful:', response);
         
-        // Create order with payment details
-        const finalOrderData = {
-          ...orderData,
-          paymentStatus: 'paid',
-          paymentId: response.razorpay_payment_id,
-          paymentSignature: response.razorpay_signature,
-        };
-        
-        const orderResponse = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/orders`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify(finalOrderData),
-          }
-        );
+        try {
+          // Create order with payment details
+          const finalOrderData = {
+            ...orderData,
+            paymentStatus: 'completed',
+            paymentId: response.razorpay_payment_id,
+            paymentSignature: response.razorpay_signature,
+          };
+          
+          const orderResponse = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/orders`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify(finalOrderData),
+            }
+          );
 
-        if (orderResponse.ok) {
-          const data = await orderResponse.json();
-          toast.success('Order placed successfully!');
-          navigate(`/order-success/${data.order.id}`);
-        } else {
-          toast.error('Failed to create order');
+          if (orderResponse.ok) {
+            const data = await orderResponse.json();
+            
+            // Create payment record
+            await fetch(
+              `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/payments`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                  orderId: data.order.id,
+                  amount: total,
+                  paymentMethod: 'razorpay',
+                  paymentId: response.razorpay_payment_id,
+                  paymentSignature: response.razorpay_signature,
+                  status: 'completed',
+                }),
+              }
+            );
+            
+            // Show success and navigate after delay
+            toast.dismiss();
+            toast.success('Payment successful! Redirecting...');
+            
+            setTimeout(() => {
+              setProcessing(false);
+              navigate(`/order-success/${data.order.id}`);
+            }, 1500);
+          } else {
+            toast.dismiss();
+            toast.error('Failed to create order');
+            setProcessing(false);
+          }
+        } catch (error) {
+          toast.dismiss();
+          toast.error('Something went wrong');
+          setProcessing(false);
         }
       },
       prefill: {
@@ -146,7 +184,7 @@ export default function CheckoutPage() {
       },
       theme: {
         // 🔹 match site teal theme
-        color: '#14b8a6',
+        color: RAZORPAY_CONFIG.THEME_COLOR,
       },
     };
 
@@ -251,6 +289,90 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
+
+      {/* Professional Processing Loader */}
+      {processing && (
+        <div className="fixed inset-0 bg-gradient-to-br from-blue-900/95 via-purple-900/95 to-pink-900/95 backdrop-blur-md z-50 flex items-center justify-center animate-fadeIn">
+          <div className="relative">
+            {/* Animated Background Circles */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-32 h-32 bg-blue-500/30 rounded-full animate-ping"></div>
+              <div className="absolute w-24 h-24 bg-purple-500/30 rounded-full animate-pulse"></div>
+            </div>
+            
+            {/* Main Card */}
+            <div className="relative bg-white rounded-3xl p-10 shadow-2xl text-center max-w-md mx-4 transform animate-slideUp">
+              {/* Success Icon Animation */}
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-spin-slow opacity-20"></div>
+                <div className="absolute inset-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <svg className="w-12 h-12 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Text Content */}
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+                Processing Payment
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Please wait while we confirm your order...
+              </p>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full animate-progress"></div>
+              </div>
+
+              {/* Loading Dots */}
+              <div className="flex justify-center gap-2 mt-6">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes progress {
+          0% { width: 0%; }
+          50% { width: 70%; }
+          100% { width: 100%; }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.5s ease-out;
+        }
+        .animate-spin-slow {
+          animation: spin-slow 3s linear infinite;
+        }
+        .animate-progress {
+          animation: progress 1.5s ease-in-out infinite;
+        }
+      `}</style>
 
       {/* Decorative squares like HomePage */}
       <div className="flex justify-between max-w-7xl mx-auto px-4 pt-10">

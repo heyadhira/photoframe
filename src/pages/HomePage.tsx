@@ -5,8 +5,10 @@ import { Footer } from "../components/Footer";
 import { ProductCard } from "../components/ProductCard";
 import { Star } from "lucide-react";
 import { projectId, publicAnonKey } from "../utils/supabase/info";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-r.png";
 import canva from "../assets/canva.jpg";
+
+
 
 // =======================
 // TYPE DEFINITIONS
@@ -406,6 +408,8 @@ export default function HomePage() {
       )}
 
       <Footer />
+     
+
     </div>
   );
 }
