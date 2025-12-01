@@ -149,7 +149,7 @@ export default function CheckoutPage() {
                 },
                 body: JSON.stringify({
                   orderId: data.order.id,
-                  amount: total,
+                  amount: totalAmount,
                   paymentMethod: 'razorpay',
                   paymentId: response.razorpay_payment_id,
                   paymentSignature: response.razorpay_signature,
@@ -186,6 +186,101 @@ export default function CheckoutPage() {
         // 🔹 match site teal theme
         color: RAZORPAY_CONFIG.THEME_COLOR,
       },
+    };
+
+    const paymentObject = new (window as any).Razorpay(options);
+    paymentObject.open();
+    return true;
+  };
+
+  const handleCodAdvancePayment = async (orderData: any, totalAmount: number) => {
+    const res = await loadRazorpayScript();
+
+    if (!res) {
+      toast.error('Razorpay SDK failed to load');
+      return false;
+    }
+
+    const advanceAmount = Number((totalAmount * 0.10).toFixed(2));
+
+    const options = {
+      key: RAZORPAY_CONFIG.KEY_ID,
+      amount: advanceAmount * 100,
+      currency: 'INR',
+      name: RAZORPAY_CONFIG.COMPANY_NAME,
+      description: 'COD Advance (10%)',
+      image: RAZORPAY_CONFIG.COMPANY_LOGO,
+      handler: async function (response: any) {
+        setProcessing(true);
+        toast.loading('Recording advance payment...');
+
+        try {
+          const finalOrderData = {
+            ...orderData,
+            paymentStatus: 'partial',
+            paymentMethod: 'cod',
+            paymentId: response.razorpay_payment_id,
+            paymentSignature: response.razorpay_signature,
+          };
+
+          const orderResponse = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/orders`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify(finalOrderData),
+            }
+          );
+
+          if (orderResponse.ok) {
+            const data = await orderResponse.json();
+
+            await fetch(
+              `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/payments`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                  orderId: data.order.id,
+                  amount: advanceAmount,
+                  paymentMethod: 'razorpay_cod_advance',
+                  paymentId: response.razorpay_payment_id,
+                  paymentSignature: response.razorpay_signature,
+                  status: 'completed',
+                }),
+              }
+            );
+
+            toast.dismiss();
+            toast.success('Advance paid. Remaining payable at delivery.');
+
+            setTimeout(() => {
+              setProcessing(false);
+              navigate(`/order-success/${data.order.id}`);
+            }, 1500);
+          } else {
+            toast.dismiss();
+            toast.error('Failed to create order');
+            setProcessing(false);
+          }
+        } catch (error) {
+          toast.dismiss();
+          toast.error('Something went wrong');
+          setProcessing(false);
+        }
+      },
+      prefill: {
+        name: formData.fullName,
+        email: formData.email,
+        contact: formData.phone,
+      },
+      theme: { color: RAZORPAY_CONFIG.THEME_COLOR },
     };
 
     const paymentObject = new (window as any).Razorpay(options);
@@ -238,32 +333,15 @@ export default function CheckoutPage() {
       if (formData.paymentMethod === 'razorpay') {
         await handleRazorpayPayment(orderData, total);
       } else if (formData.paymentMethod === 'cod') {
-        // COD - create order directly
-        const response = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/orders`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({ ...orderData, paymentStatus: 'pending' }),
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          toast.success('Order placed successfully!');
-          navigate(`/order-success/${data.order.id}`);
-        } else {
-          toast.error('Failed to place order');
-        }
+        await handleCodAdvancePayment(orderData, total);
       }
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Failed to place order');
     } finally {
-      setProcessing(false);
+      if (formData.paymentMethod !== 'razorpay' && formData.paymentMethod !== 'cod') {
+        setProcessing(false);
+      }
     }
   };
 
@@ -546,8 +624,13 @@ export default function CheckoutPage() {
                       className="mr-3"
                     />
                     <Wallet className="w-6 h-6 mr-3 text-gray-600" />
-                    <span className="text-gray-900">Cash on Delivery</span>
+                    <span className="text-gray-900">Cash on Delivery (10% advance)</span>
                   </label>
+                  {formData.paymentMethod === 'cod' && (
+                    <p className="text-sm text-gray-600 pl-1">
+                      Pay 10% online now, and the remaining on delivery.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -609,7 +692,7 @@ export default function CheckoutPage() {
                         <span>
                           {product.name} x{item.quantity}
                         </span>
-                        <span>${(product.price * item.quantity).toFixed(2)}</span>
+                        <span>₹{(product.price * item.quantity).toFixed(2)}</span>
                       </div>
                     );
                   })}
@@ -617,19 +700,31 @@ export default function CheckoutPage() {
                   <div className="border-t pt-3" style={{ borderColor: '#e5e7eb' }}>
                     <div className="flex justify-between text-gray-700">
                       <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>₹{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-gray-700">
                       <span>Shipping</span>
-                      <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                      <span>{shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`}</span>
                     </div>
                   </div>
                   
                   <div className="border-t pt-3" style={{ borderColor: '#e5e7eb' }}>
                     <div className="flex justify-between text-xl font-semibold text-gray-900">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>₹{total.toFixed(2)}</span>
                     </div>
+                    {formData.paymentMethod === 'cod' && (
+                      <div className="flex justify-between text-sm mt-2 text-gray-700">
+                        <span>Advance (10%) due now</span>
+                        <span>₹{(Math.round(total * 0.10)).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {formData.paymentMethod === 'cod' && (
+                      <div className="flex justify-between text-sm text-gray-700">
+                        <span>Remaining on delivery</span>
+                        <span>₹{(total - Math.round(total * 0.10)).toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -649,8 +744,9 @@ export default function CheckoutPage() {
                     if (!processing) e.currentTarget.style.backgroundColor = '#14b8a6';
                   }}
                 >
-                  {processing ? 'Processing...' : 'Place Order'}
-                </button>
+                  {processing ? 'Processing...' : (formData.paymentMethod === 'cod' ? 'Pay 10% & Place COD Order' : 'Place Order')}
+                </button
+                >
               </div>
             </div>
           </div>

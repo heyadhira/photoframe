@@ -72,12 +72,17 @@ export default function OrderSuccessPage() {
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(11);
     doc.text(`Order ID: ${order.id}`, 14, 45);
+    const isCod = String(order.paymentMethod || '').toLowerCase().includes('cod');
     doc.text(`Payment Status: ${order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}`, 14, 52);
+    doc.text(`Payment Method: ${isCod ? 'COD (10% advance paid)' : (order.paymentMethod || 'N/A')}`, 14, 59);
+    if (isCod) {
+      doc.text(`COD Terms: 10% paid online, remaining on delivery`, 14, 66);
+    }
     doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString('en-IN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
-    })}`, 14, 59);
+    })}`, 14, isCod ? 73 : 66);
 
     // Shipping Address Section
     doc.setFont("Helvetica", "bold");
@@ -143,7 +148,8 @@ export default function OrderSuccessPage() {
 
     // Summary Box Background
     doc.setFillColor(249, 250, 251);
-    doc.rect(120, finalY - 5, 76, 30, 'F');
+    const boxHeight = isCod ? 44 : 30;
+    doc.rect(120, finalY - 5, 76, boxHeight, 'F');
 
     // Summary Section
     doc.setFont("Helvetica", "normal");
@@ -154,10 +160,10 @@ export default function OrderSuccessPage() {
     const valueX = 191;
 
     doc.text("Subtotal:", labelX, finalY + 3);
-    doc.text(`Rs. ${order.subtotal.toFixed(2)}`, valueX, finalY + 3, { align: 'right' });
+    doc.text(`Rs. ${Number(order.subtotal).toFixed(2)}`, valueX, finalY + 3, { align: 'right' });
 
     doc.text("Shipping:", labelX, finalY + 10);
-    doc.text(order.shipping === 0 ? 'Free' : `Rs. ${order.shipping.toFixed(2)}`, valueX, finalY + 10, { align: 'right' });
+    doc.text(Number(order.shipping) === 0 ? 'Free' : `Rs. ${Number(order.shipping).toFixed(2)}`, valueX, finalY + 10, { align: 'right' });
 
     // Separator line
     doc.setDrawColor(209, 213, 219);
@@ -169,7 +175,19 @@ export default function OrderSuccessPage() {
     doc.setFontSize(12);
     doc.setTextColor(20, 184, 166);
     doc.text("Grand Total:", labelX, finalY + 21);
-    doc.text(`Rs. ${order.total.toFixed(2)}`, valueX, finalY + 21, { align: 'right' });
+    doc.text(`Rs. ${Number(order.total).toFixed(2)}`, valueX, finalY + 21, { align: 'right' });
+
+    if (isCod) {
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(75, 85, 99);
+      const advance = Number((Number(order.total) * 0.10).toFixed(2));
+      const remaining = Number((Number(order.total) - advance).toFixed(2));
+      doc.text("Advance (10%):", labelX, finalY + 28);
+      doc.text(`Rs. ${advance.toFixed(2)}`, valueX, finalY + 28, { align: 'right' });
+      doc.text("Remaining on delivery:", labelX, finalY + 35);
+      doc.text(`Rs. ${remaining.toFixed(2)}`, valueX, finalY + 35, { align: 'right' });
+    }
 
     // Footer Section
     const footerY = 270;
@@ -307,6 +325,15 @@ export default function OrderSuccessPage() {
                 <p className="text-gray-600 capitalize">
                   {order.paymentStatus}
                 </p>
+                <p className="text-gray-600 mt-1">
+                  Payment Method: {order.paymentMethod || 'N/A'}
+                </p>
+                {String(order.paymentMethod || '').toLowerCase().includes('cod') && (
+                  <div className="mt-2 text-sm text-gray-700">
+                  <p>Advance paid: ₹{(Number(order.total) * 0.10).toFixed(2)}</p>
+                  <p>Remaining on delivery: ₹{(Number(order.total) * 0.90).toFixed(2)}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -340,20 +367,32 @@ export default function OrderSuccessPage() {
             <div className="border-t mt-4 pt-4 space-y-2">
               <div className="flex justify-between text-gray-700">
                 <span>Subtotal</span>
-                <span>₹{order.subtotal}</span>
+                <span>₹{Number(order.subtotal).toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between text-gray-700">
                 <span>Shipping</span>
                 <span>
-                  {order.shipping === 0 ? "Free" : `₹${order.shipping}`}
+                  {Number(order.shipping) === 0 ? "Free" : `₹${Number(order.shipping).toFixed(2)}`}
                 </span>
               </div>
 
               <div className="flex justify-between text-xl font-semibold text-gray-900">
                 <span>Total</span>
-                <span>₹{order.total}</span>
+                <span>₹{Number(order.total).toFixed(2)}</span>
               </div>
+              {String(order.paymentMethod || '').toLowerCase().includes('cod') && (
+                <>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Advance (10%)</span>
+                    <span>₹{(Number(order.total) * 0.10).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Remaining on delivery</span>
+                    <span>₹{(Number(order.total) * 0.90).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
