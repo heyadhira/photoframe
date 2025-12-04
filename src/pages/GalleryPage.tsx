@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Navbar } from '../components/Navbar';
-import { Footer } from '../components/Footer';
-import { X, Image } from 'lucide-react';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import React, { useEffect, useState } from "react";
+import { Navbar } from "../components/Navbar";
+import { Footer } from "../components/Footer";
+import { X } from "lucide-react";
+import { projectId, publicAnonKey } from "../utils/supabase/info";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 export default function GalleryPage() {
   const [galleryItems, setGalleryItems] = useState([]);
-  const [selectedImage, setSelectedImage] = useState<any>(null);
-  const [filter, setFilter] = useState('All');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [filter, setFilter] = useState("All");
   const [loading, setLoading] = useState(true);
-  const [imageLoading, setImageLoading] = useState<{[key: string]: boolean}>({});
+
+  // PAGINATION
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   useEffect(() => {
     fetchGallery();
@@ -21,142 +24,147 @@ export default function GalleryPage() {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/gallery`,
         {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
+          headers: { Authorization: `Bearer ${publicAnonKey}` },
         }
       );
       const data = await response.json();
       setGalleryItems(data.galleryItems || []);
     } catch (error) {
-      console.error('Fetch gallery error:', error);
+      console.error("Gallery fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const categories = ['All', 'Events', 'Studio', 'Outdoor', 'Portrait'];
+  const categories = ["All", "Events", "Studio", "Outdoor", "Portrait"];
 
   const filteredItems =
-    filter === 'All'
+    filter === "All"
       ? galleryItems
-      : galleryItems.filter((item: any) => item.category === filter);
+      : galleryItems.filter((item) => item.category === filter);
 
-  const itemsByYear = filteredItems.reduce((acc: any, item: any) => {
-    const year = item.year || new Date().getFullYear();
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
+  // 🟢 FIXED PAGINATION LOGIC — ALWAYS 12 ITEMS
+  // 1) Group all filtered items by year
+  const grouped = filteredItems.reduce((acc, item) => {
+    const year = item.year ?? new Date().getFullYear();
     if (!acc[year]) acc[year] = [];
     acc[year].push(item);
     return acc;
   }, {});
 
-  const years = Object.keys(itemsByYear).sort((a, b) => parseInt(b) - parseInt(a));
+  const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
+
+  // 2) Flatten (so pagination works across years)
+  const flattened = sortedYears.flatMap((year) =>
+    grouped[year].map((item) => ({ ...item, __year: year }))
+  );
+
+  // 3) Pagination applied ONLY here
+  const totalPages = Math.ceil(flattened.length / ITEMS_PER_PAGE);
+
+  const paginatedFlat = flattened.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // 4) Re-group only paginated items by their year
+  const itemsByYear = paginatedFlat.reduce((acc, item) => {
+    if (!acc[item.__year]) acc[item.__year] = [];
+    acc[item.__year].push(item);
+    return acc;
+  }, {});
+
+  const years = Object.keys(itemsByYear).sort((a, b) => b - a);
 
   return (
-    <div className="min-h-screen bg-white content-offset">
+    <div className="min-h-screen about-theme bg-[#f3f1ed] content-offset">
       <Navbar />
 
-      {/* HERO HEADER */}
-      <section
-        className="relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #f1f5f9 100%)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 py-14 lg:py-20">
-          <div className="space-y-6 text-center">
-            {/* Decorative squares */}
-            <div className="flex justify-center gap-2 mb-4">
-              <div className="w-8 h-8 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
-              <div className="w-8 h-8 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
-            </div>
-
-            <h1 className="text-4xl lg:text-5xl font-bold">
-              Explore Our <span style={{ color: '#14b8a6' }}>Gallery</span>
+      {/* HERO */}
+      <section className="w-full py-14 px-4 sm:py-20 mt-6 mb-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="soft-card p-8 sm:p-12 card-appear">
+            <h1 className="text-center text-4xl sm:text-5xl font-bold font-rashi animate-title mb-4">
+              Our <span style={{ color: "#14b8a6" }}>Gallery</span>
             </h1>
-
-            <p className="text-gray-600 max-w-xl mx-auto leading-relaxed">
-              A curated collection of our finest artwork — captured across events,
-              studios, outdoors, and creative visuals.
+            <p className="text-center text-gray-600 max-w-3xl mx-auto italic text-base sm:text-lg">
+              A curated collection of artwork captured across events, studios,
+              outdoor moments and creative visuals — all crafted with passion.
             </p>
-
-            <div className="flex justify-center gap-2 pt-4">
-              <div className="w-8 h-8 border-2 rounded" style={{ borderColor: "#cbd5e1" }}></div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* CATEGORY FILTER */}
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="flex gap-3 h-scroll no-scrollbar -mx-4 px-4">
-          {categories.map((category) => (
+      {/* FILTER */}
+      <div className="max-w-7xl mx-auto px-4 pb-10">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar">
+          {categories.map((cat) => (
             <button
-              key={category}
-              onClick={() => setFilter(category)}
-              className="px-6 py-2 rounded-lg transition text-sm font-medium shadow-md"
-              style={{
-                backgroundColor: filter === category ? '#14b8a6' : 'white',
-                color: filter === category ? 'white' : '#475569',
-                border: filter === category ? 'none' : '1px solid #cbd5e1',
-              }}
-              onMouseEnter={(e) => {
-                if (filter !== category) {
-                  e.currentTarget.style.backgroundColor = '#f0fdfa';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (filter !== category) {
-                  e.currentTarget.style.backgroundColor = 'white';
-                }
-              }}
+              key={cat}
+              onClick={() => setFilter(cat)}
+              className={`px-6 py-2 rounded-full account-tab font-medium shadow-md transition-all whitespace-nowrap text-black
+                ${
+                  filter === cat
+                    ? "bg-[#14b8a6] text-black"
+                    : "bg-white text-gray-700 border border-gray-300"
+                }`}
             >
-              {category}
+              {cat}
             </button>
           ))}
         </div>
       </div>
 
-      {/* GALLERY GRID */}
-      <div className="max-w-7xl mx-auto px-4 pb-20">
+      {/* GALLERY */}
+      <div className="max-w-7xl mx-auto px-4 pb-10">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin h-12 w-12 border-b-2 rounded-full" style={{ borderColor: '#14b8a6' }}></div>
+          <div className="flex justify-center py-20">
+            <div className="animate-spin h-12 w-12 border-b-2 border-[#14b8a6] rounded-full"></div>
           </div>
-        ) : filteredItems.length > 0 ? (
+        ) : flattened.length === 0 ? (
+          <p className="text-center py-20 text-gray-500 text-lg">
+            No items found
+          </p>
+        ) : (
           <div className="space-y-16">
             {years.map((year) => (
               <div key={year}>
-                <h2 className="text-3xl font-bold text-gray-900 mb-8">{year}</h2>
+                <h2 className="text-4xl font-rashi font-bold text-[#3b2f27] mb-10 pt-12">
+                  {year}
+                </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {itemsByYear[year].map((item: any) => (
+                <div
+                  className="
+                  grid 
+                  grid-cols-1 
+                  sm:grid-cols-2 
+                  md:grid-cols-4 
+                  lg:grid-cols-4 
+                  gap-8
+                "
+                >
+                  {itemsByYear[year].map((item) => (
                     <div
                       key={item.id}
                       onClick={() => setSelectedImage(item)}
-                      className="group relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden cursor-pointer shadow-md transition hover:shadow-xl"
+                      className="curved-image-card cursor-pointer"
                     >
-                      {imageLoading[item.id] !== false && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                      )}
-                      <ImageWithFallback
-                        src={item.thumbUrl || item.image}
-                        alt={item.title}
-                        loading="lazy"
-                        decoding="async"
-                        onLoad={() => setImageLoading(prev => ({...prev, [item.id]: false}))}
-                        onError={() => setImageLoading(prev => ({...prev, [item.id]: false}))}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 bg-white"
-                      />
+                      <div className="w-full aspect-[4/3] bg-gray-100">
+                        <ImageWithFallback
+                          src={item.thumbUrl || item.image}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                          <h3 className="text-lg font-semibold drop-shadow-lg">{item.title}</h3>
-                          {item.description && (
-                            <p className="text-sm text-gray-200 mt-1 drop-shadow-md">{item.description}</p>
-                          )}
-                        </div>
+                      <div className="p-4">
+                        <h3 className="font-rashi font-semibold text-lg text-gray-800">
+                          {item.title}
+                        </h3>
                       </div>
                     </div>
                   ))}
@@ -164,51 +172,92 @@ export default function GalleryPage() {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-16">
-            <p className="text-gray-500 text-lg">No gallery items available</p>
-          </div>
         )}
       </div>
 
-      {/* IMAGE MODAL */}
+      {/* PAGINATION */}
+      {flattened.length > ITEMS_PER_PAGE && (
+        <div className="max-w-7xl mx-auto px-4 pb-20">
+          <div className="flex justify-center gap-3 flex-wrap">
+
+            {/* Prev */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-full border shadow-sm transition-all ${
+                currentPage === 1
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-50 text-gray-800"
+              }`}
+            >
+              Prev
+            </button>
+
+            {/* Page Numbers */}
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-4 py-2 rounded-full border shadow-sm transition-all ${
+                  currentPage === i + 1
+                    ? "bg-[#14b8a6] text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            {/* Next */}
+            <button
+              onClick={() =>
+                setCurrentPage((p) => Math.min(totalPages, p + 1))
+              }
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-full border shadow-sm transition-all ${
+                currentPage === totalPages
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-50 text-gray-800"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 sm:p-6"
           onClick={() => setSelectedImage(null)}
         >
           <button
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition"
-            onClick={() => setSelectedImage(null)}
+            className="absolute top-4 right-4 text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedImage(null);
+            }}
           >
-            <X className="w-8 h-8" />
+            <X className="w-10 h-10" />
           </button>
 
-          <div className="max-w-5xl max-h-[90vh] text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="relative inline-block">
-              <ImageWithFallback
-                src={selectedImage.image}
-                alt={selectedImage.title}
-                decoding="async"
-                className="max-w-full max-h-[70vh] object-contain mx-auto mb-6 rounded-lg shadow-2xl"
-              />
-            </div>
+          <div
+            className="max-w-4xl w-full max-h-[90vh] bg-white rounded-2xl p-6 shadow-xl about-theme card-appear"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ImageWithFallback
+              src={selectedImage.image}
+              className="w-full max-h-[70vh] object-contain mx-auto rounded-xl"
+            />
 
-            <h2 className="text-2xl text-white font-semibold mb-2">
+            <h2 className="text-3xl font-rashi text-center mt-4">
               {selectedImage.title}
             </h2>
 
-            {selectedImage.description && (
-              <p className="text-gray-300 mb-3 max-w-2xl mx-auto">
-                {selectedImage.description}
-              </p>
-            )}
-
-            <div className="flex justify-center gap-4 text-sm text-gray-400">
-              <span>{selectedImage.category}</span>
-              <span>•</span>
-              <span>{selectedImage.year}</span>
-            </div>
+            <p className="text-center text-gray-600 mt-2 max-w-2xl mx-auto">
+              {selectedImage.description}
+            </p>
           </div>
         </div>
       )}

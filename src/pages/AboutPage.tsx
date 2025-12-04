@@ -2,7 +2,7 @@ import React from "react";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Mail, Phone, MapPin } from "lucide-react";
-import aboutImg from "../assets/3.jpg";
+import aboutImg from "../assets/5.jpg";
 import canvaImg from "../assets/canva.jpg";
 import heroImg from "../assets/hero.jpg";
 import lordramaImg from "../assets/lordrama.jpg";
@@ -17,12 +17,12 @@ export default function AboutPage() {
 
       {/* HERO HEADER */}
       <section
-        className="relative mb-16 w-95 mx-auto overflow-hidden rounded-lg "
+        className="max-w-7xl relative mx-auto overflow-hidden rounded-lg "
       >
         <img
           src={aboutImg}
           alt="Decor your home"
-          className="w-full h-160 sm:h-[480px] object-fit"
+          className="w-full h-140 sm:h-[480px] object-fit"
         />
 
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-transparent" />
@@ -35,10 +35,7 @@ export default function AboutPage() {
               With Style
             </h1>
 
-            <p className="text-white/90 text-lg leading-relaxed max-w-md drop-shadow mb-6">
-              Because your home isn’t just where you live — it’s where your
-              story unfolds. And we’re here to help you fill it with style.
-            </p>
+
 
             <a
               href="#who-we-are"
@@ -51,153 +48,249 @@ export default function AboutPage() {
       </section>
 
       {/* WHO WE ARE */}
-      <section id="who-we-are" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="soft-card p-10 lg:p-14 space-y-6 card-appear">
-          <h2 className="section-title mb-4">
+      <section id="who-we-are" className="max-w-7xl relative mx-auto overflow-hidden rounded-lg mt-16 mb-16">
+        <div className="soft-card p-10 lg:p-14 space-y-6 card-appear ">
+          <h2 className="section-title mb-4 pl-6 pb-2 border-b-2 border-[#14b8a6] mt-6">
             Who We <span style={{ color: "#14b8a6" }}>Are</span>
           </h2>
 
-          <p>
+          <p className="text-xl font-bold italic text-[#14b8a6] pl-6">
             We are a small, passionate team of creators, designers, and storytellers who believe
             that art can transform the energy of any room.
-          </p>
-
-          <p>
+            <br />
             Our journey began with one vision — to create artwork that makes people feel
             something. Not just decorations, but expressive pieces that add soul to a space.
-          </p>
-
-          <p>
+            
+            <br />
             Every collection we create goes through a long process of sketching, refining, 
             color exploration, and visual storytelling.
+
+
+
           </p>
 
-          <p className="text-xl font-bold italic text-[#14b8a6]">
+          <p className="text-xl font-bold italic text-[#14b8a6] pl-6">
             “Would I hang this in my own home?”
           </p>
 
-          <p>
+          <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
             If the answer isn’t a confident yes — we don’t publish it.
-          </p>
-
-          <p>
+            
+            <br />
             Our inspiration spans minimalism, pop-art, abstract, photography, shapes, patterns,
             and the world around us — creating a blend of fresh, modern, and expressive art.
-          </p>
-
-          <p>
+            
+            <br />
             Beyond the artwork, we deeply care about how you feel when you receive it.
             We want your space to feel more YOU.
           </p>
         </div>
       </section>
+{/* Why choose us */}
+ <section className="max-w-7xl relative mx-auto overflow-hidden rounded-lg">
+     <div className="soft-card p-10 lg:p-14 card-appear p-6">
 
-      {/* WHY CHOOSE US */}
-      <section className="max-w-7xl mx-auto px-4 py-14">
-        <div className="soft-card p-10 lg:p-14 space-y-6 card-appear">
-          <h2 className="section-title mb-3">
-            Why <span style={{ color: "#14b8a6" }}>Choose Us</span>
-          </h2>
+    {/* TITLE */}
+    <h2 className="section-title pl-6  border-b-2 border-[#14b8a6]">
+      <span className="text-[#3b2f27]">Why</span>
+      <span style={{ color: "#14b8a6" }}> Choose Us</span>
+    </h2>
 
-          <p>
-            Choose us because we genuinely care about what goes on your wall. Our
-            designs are original, our materials are premium, and our team provides
-            real human support — not automated messages.
-          </p>
+    <div className="grid md:grid-cols-2 gap-12 items-center">
 
-          <p>
-            With Decorizz, you're not just buying wall art — you’re bringing home
-            something crafted with intention.
-          </p>
-        </div>
-      </section>
 
-      {/* OUR MISSION */}
-      <section className="max-w-7xl mx-auto px-4 py-14">
-        <h2 className="section-title mb-8">
-          Our <span style={{ color: "#8a6d56" }}>Mission</span>
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-7">
-          {/* LEFT TEXT BOX */}
-          <div className="soft-card md:col-span-2 p-10 space-y-4 card-appear">
-            <p>
-              Every piece we create is designed to add joy, emotion, and depth
-              to your home — one wall at a time.
-            </p>
-
-            <p>
-              Our mission is simple: make decorating effortless, enjoyable, and 
-              meaningful, helping people express personality through living art.
-            </p>
-          </div>
-
-          {/* IMAGE GRID */}
-          <div className="soft-card p-4 card-appear">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                canvaImg,
-                heroImg,
-                heroImg,
-                owlImg,
-              ].map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  className="w-full h-28 object-cover rounded-xl hover-lift"
-                />
-              ))}
+       {/* left IMAGES */}
+      <div className="soft-card p-6 hover-lift">
+        <div className="grid grid-cols-2 gap-4">
+          {[canvaImg, owlImg].map((src, i) => (
+            <div key={i} className="overflow-hidden rounded-xl premium-shadow">
+              <img
+                src={src}
+                className="w-full h-32 object-cover transition-all duration-300 hover:scale-105"
+              />
             </div>
-          </div>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* WHY WE STAND OUT */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="soft-card p-10 lg:p-14 space-y-6 card-appear">
-          <h2 className="section-title mb-3">
-            Why We <span style={{ color: "#14b8a6" }}>Stand Out</span>
-          </h2>
+      {/* right TEXT */}
+      <div className="space-y-6">
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          Choose us because we genuinely care about what goes on your wall. Our
+          designs are original, our materials are premium, and our team provides
+          real human support — not automated messages.
+        </p>
 
-          <p>At Decorizz, we don’t mass-produce art — we create it with heart.</p>
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+           With Decorizz, you're not just buying wall art — you’re bringing home
+          something crafted with intention.
+        </p>
 
-          <p>
-            Every artwork is thoughtfully designed, carefully reviewed, and crafted to bring
+      </div>
+
+     
+
+    </div>
+
+  </div>
+</section>
+
+{/* OUR MISSION */}
+<section className="max-w-7xl relative mx-auto overflow-hidden rounded-lg mt-12">
+  <div className="soft-card p-10 lg:p-14 card-appear p-6">
+
+    {/* TITLE */}
+    <h2 className="section-title pl-6  border-b-2 border-[#14b8a6]">
+      <span className="text-[#3b2f27]">Our</span>
+      <span style={{ color: "#14b8a6" }}>Mission</span>
+    </h2>
+
+    <div className="grid md:grid-cols-2 gap-12 items-center">
+
+      {/* LEFT TEXT */}
+      <div className="space-y-6">
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          Every piece we create is designed to add joy, emotion, and depth
+          to your home — one wall at a time.
+        </p>
+
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          Our mission is simple: make decorating effortless, enjoyable, and 
+          meaningful, helping people express personality through living art.
+        </p>
+
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          We believe your walls should reflect who you are — your style, your
+          story, and the moments that matter most.
+        </p>
+      </div>
+
+      {/* RIGHT IMAGES */}
+      <div className="soft-card p-6 hover-lift">
+        <div className="grid grid-cols-2 gap-4">
+          {[canvaImg, heroImg, heroImg, owlImg].map((src, i) => (
+            <div key={i} className="overflow-hidden rounded-xl premium-shadow">
+              <img
+                src={src}
+                className="w-full h-32 object-cover transition-all duration-300 hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+ <section className="max-w-7xl relative mx-auto overflow-hidden rounded-lg mt-12">
+     <div className="soft-card p-10 lg:p-14 card-appear p-6">
+
+    {/* TITLE */}
+    <h2 className="section-title pl-6  border-b-2 border-[#14b8a6]">
+      <span className="text-[#3b2f27]">Why We</span>
+      <span style={{ color: "#14b8a6" }}> Stand Out</span>
+    </h2>
+
+    <div className="grid md:grid-cols-2 gap-12 items-center">
+
+
+       {/* left IMAGES */}
+      <div className="soft-card p-6 hover-lift">
+        <div className="grid grid-cols-2 gap-4">
+          {[canvaImg, owlImg].map((src, i) => (
+            <div key={i} className="overflow-hidden rounded-xl premium-shadow">
+              <img
+                src={src}
+                className="w-full h-32 object-cover transition-all duration-300 hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* right TEXT */}
+      <div className="space-y-6">
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          At Decorizz, we don’t mass-produce art — we create it with heart.
+        </p>
+
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          Every artwork is thoughtfully designed, carefully reviewed, and crafted to bring
             warmth and character into your space.
-          </p>
+        </p>
 
-          <p>
-            When you shop with Decorizz, you're choosing creativity, not templates.
-          </p>
-        </div>
-      </section>
+        <p className="text-xl font-bold italic text-[#14b8a6] pl-6 mb-6">
+          When you shop with Decorizz, you're choosing creativity, not templates.
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
 
       {/* CONTACT */}
-      <section className="max-w-7xl mx-auto px-4 pb-24">
-        <div className="soft-card p-10 lg:p-14 space-y-8 card-appear">
-          <h2 className="section-title">
-            Contact <span style={{ color: "#14b8a6" }}>Us</span>
-          </h2>
+   <section className="max-w-7xl relative mx-auto overflow-hidden rounded-lg mt-16 mb-16">
+  <div className="soft-card p-10 lg:p-14 space-y-8 card-appear">
 
-          <div className="grid md:grid-cols-3 gap-10">
-            <ContactItem
-              icon={<MapPin className="w-7 h-7 text-[#8a6d56]" />}
-              title="Address"
-              text="Gurugram road Near Subhash chowk Shaktifarm market Sitarganj Udham Singh Nagar 263151"
-            />
-            <ContactItem
-              icon={<Phone className="w-7 h-7 text-[#8a6d56]" />}
-              title="Phone"
-              text="+91 9705180483"
-            />
-            <ContactItem
-              icon={<Mail className="w-7 h-7 text-[#8a6d56]" />}
-              title="Email"
-              text="contact@decorizz.com"
-            />
-          </div>
-        </div>
-      </section>
+    {/* Section Title */}
+    <h2 className="section-title mb-4 pl-6 pb-2 border-b-2 border-[#14b8a6] mt-6">
+      Contact <span style={{ color: "#14b8a6" }}>Us</span>
+    </h2>
+
+    {/* TWO COLUMN LAYOUT */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+      {/* LEFT COLUMN – CONTACT DETAILS */}
+      <div className="space-y-8 pl-6 px-4 text-xl font-bold italic text-[#14b8a6]">
+
+        <ContactItem
+          icon={<MapPin className="w-7 h-7 text-[#8a6d56]" />}
+          title="Address"
+          text="Gurugram road Near Subhash chowk Shaktifarm market Sitarganj Udham Singh Nagar 263151"
+        />
+
+        <ContactItem
+          icon={<Phone className="w-7 h-7 text-[#8a6d56]" />}
+          title="Phone"
+          text="+91 9705180483"
+        />
+
+        <ContactItem
+          icon={<Mail className="w-7 h-7 text-[#8a6d56]" />}
+          title="Email"
+          text="contact@decorizz.com"
+        />
+
+      </div>
+
+      {/* RIGHT COLUMN – GOOGLE MAP */}
+      {/* RIGHT COLUMN – GOOGLE MAP */}
+<div className="soft-card p-2 rounded-2xl overflow-hidden shadow-md border border-[#e6ddd4]">
+  <iframe
+    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3567.704724910472!2d79.700000!3d28.930000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sSitarganj!5e0!3m2!1sen!2sin!4v1706800000000"
+    width="100%"
+    height="350"
+    style={{
+      border: "0",
+      borderRadius: "18px",
+    }}
+    allowFullScreen=""
+    loading="lazy"
+    referrerPolicy="no-referrer-when-downgrade"
+  ></iframe>
+</div>
+
+
+    </div>
+  </div>
+</section>
+
 
       <Footer />
     </div>

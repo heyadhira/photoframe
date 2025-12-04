@@ -25,6 +25,8 @@ export default function AdminProducts() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [colorImageFiles, setColorImageFiles] = useState<Record<string, File | null>>({});
+  const [colorImagePreviews, setColorImagePreviews] = useState<{White?: string; Black?: string; Brown?: string}>({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -43,6 +45,7 @@ export default function AdminProducts() {
     subsection: "Basic",
     format: "Rolled",
     frameColor: "Black",
+    imagesByColor: { White: "", Black: "", Brown: "" },
   });
 
   // Fetch Products
@@ -67,6 +70,35 @@ export default function AdminProducts() {
       console.error("Fetch products error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+  const handleColorImageChange = (color: 'White' | 'Black' | 'Brown') => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setColorImageFiles(prev => ({ ...prev, [color]: file }));
+      const reader = new FileReader();
+      reader.onloadend = () => setColorImagePreviews(prev => ({ ...prev, [color]: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadColorImage = async (color: 'White' | 'Black' | 'Brown') => {
+    const file = colorImageFiles[color];
+    if (!file) return (formData.imagesByColor as any)[color];
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/products/upload`,
+        { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: fd }
+      );
+      const data = await response.json();
+      if (response.ok && data.url) return data.url;
+      toast.error(`Image upload failed for ${color}`);
+      return (formData.imagesByColor as any)[color];
+    } catch {
+      toast.error(`Image upload failed for ${color}`);
+      return (formData.imagesByColor as any)[color];
     }
   };
 
@@ -131,6 +163,7 @@ export default function AdminProducts() {
         subsection: product.subsection || "Basic",
         format: product.format || "Rolled",
         frameColor: product.frameColor || "Black",
+        imagesByColor: (product as any).imagesByColor || { White: "", Black: "", Brown: "" },
       });
     } else {
       setEditingProduct(null);
@@ -151,6 +184,7 @@ export default function AdminProducts() {
         subsection: "Basic",
         format: "Rolled",
         frameColor: "Black",
+        imagesByColor: { White: "", Black: "", Brown: "" },
       });
     }
 
@@ -162,11 +196,16 @@ export default function AdminProducts() {
 
     // Upload image first if new image selected
     const imageUrl = await uploadImage();
+    const byColor: any = { ...formData.imagesByColor };
+    for (const c of ['White','Black','Brown'] as const) {
+      byColor[c] = await uploadColorImage(c);
+    }
 
     const bodyData = {
       ...formData,
       price: parseFloat(formData.price),
       image: imageUrl,
+      imagesByColor: byColor,
     };
 
     try {
@@ -609,6 +648,41 @@ export default function AdminProducts() {
               Available Colors
             </h3>
             <p className="text-sm text-gray-500 mb-4">Select colors available for this product</p>
+          </div>
+
+          {/* COLOR-SPECIFIC IMAGES */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded"></span>
+              Frame Images by Color (optional)
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">Upload different frame images for White, Black, Brown</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {(['White','Black','Brown'] as const).map(color => (
+                <div key={color} className="border rounded-lg p-3">
+                  <p className="text-sm font-semibold text-gray-800 mb-2">{color}</p>
+                  {(colorImagePreviews[color] || (formData.imagesByColor as any)[color]) ? (
+                    <div className="relative">
+                      <img
+                        src={colorImagePreviews[color] || (formData.imagesByColor as any)[color]}
+                        alt={`${color} frame`}
+                        className="w-full h-32 object-cover rounded"
+                      />
+                      <label className="mt-2 inline-block px-3 py-1 rounded border text-sm cursor-pointer" style={{ borderColor: '#d1d5db', color: '#374151' }}>
+                        Replace
+                        <input type="file" className="hidden" accept="image/*" onChange={handleColorImageChange(color)} />
+                      </label>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <span className="text-xs text-gray-500">Upload {color} frame image</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleColorImageChange(color)} />
+                    </label>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -1230,6 +1230,118 @@ app.delete('/make-server-52d68140/gallery/:id', async (c) => {
   }
 });
 
+// Contact Messages Routes
+app.post('/make-server-52d68140/contact-messages', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { name, email, phone, subject, message } = body || {};
+
+    if (!name || !email || !message) {
+      return c.json({ error: 'Name, email and message are required' }, 400);
+    }
+
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const record = {
+      id,
+      name,
+      email,
+      phone: phone || '',
+      subject: subject || '',
+      message,
+      createdAt: new Date().toISOString(),
+      status: 'new',
+    };
+
+    await kv.set(`contact:${id}`, record);
+
+    // Notify admins
+    const allUsers = await kv.getByPrefix('user:');
+    const admins = allUsers?.filter((u: any) => u.role === 'admin');
+    for (const admin of admins || []) {
+      await createNotification(
+        admin.id,
+        'contact_message',
+        'New Contact Message',
+        `${name} sent a new message${subject ? `: ${subject}` : ''}.`,
+        { contactId: id, name, email }
+      );
+    }
+
+    return c.json({ success: true, contact: record });
+  } catch (error) {
+    console.log('Create contact message error:', error);
+    return c.json({ error: 'Failed to submit message' }, 500);
+  }
+});
+
+app.get('/make-server-52d68140/contact-messages', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const messages = await kv.getByPrefix('contact:');
+    const sorted = (messages || []).sort((a: any, b: any) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return c.json({ contacts: sorted });
+  } catch (error) {
+    console.log('Get contact messages error:', error);
+    return c.json({ error: 'Failed to fetch contact messages' }, 500);
+  }
+});
+
+app.put('/make-server-52d68140/contact-messages/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const id = c.req.param('id');
+    const existing = await kv.get(`contact:${id}`);
+    if (!existing) return c.json({ error: 'Contact message not found' }, 404);
+
+    const updates = await c.req.json();
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await kv.set(`contact:${id}`, updated);
+
+    return c.json({ success: true, contact: updated });
+  } catch (error) {
+    console.log('Update contact message error:', error);
+    return c.json({ error: 'Failed to update contact message' }, 500);
+  }
+});
+
+app.delete('/make-server-52d68140/contact-messages/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const id = c.req.param('id');
+    const existing = await kv.get(`contact:${id}`);
+    if (!existing) return c.json({ error: 'Contact message not found' }, 404);
+
+    await kv.del(`contact:${id}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Delete contact message error:', error);
+    return c.json({ error: 'Failed to delete contact message' }, 500);
+  }
+});
 
 Deno.serve(app.fetch);// Add these routes before Deno.serve(app.fetch); in index.tsx
 

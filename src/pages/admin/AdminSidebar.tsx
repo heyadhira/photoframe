@@ -11,6 +11,7 @@ import {
   Image as GalleryIcon,
   CreditCard,
   Truck,
+  Mail,
   LogOut,
   Menu,
   X,
@@ -67,6 +68,7 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
     { label: "Payments", icon: CreditCard, path: "/admin/payments" },
     { label: "Delivery", icon: Truck, path: "/admin/delivery" },
     { label: "Testimonials", icon: Star, path: "/admin/testimonials" },
+    { label: "Contacts", icon: Mail, path: "/admin/contacts" },
   ];
 
   return (

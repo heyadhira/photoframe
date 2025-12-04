@@ -280,7 +280,7 @@ export default function ProductDetailPage() {
           <div className="rounded-xl shadow-xl bg-white p-4">
             <div className="aspect-square overflow-hidden rounded-lg">
               <ImageWithFallback
-                src={product.image}
+                src={(product as any).imagesByColor?.[selectedColor] || product.image}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />

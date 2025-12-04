@@ -11,10 +11,10 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
           {/* logo */}
           <div className="flex items-center md:block">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full" style={{ background: '#14b8a6' }}></div>
+            <Link to="/" className="flex items-center gap-3">
+              <img src={logoImage} alt="Decorizz" className="h-10 w-auto" />
               <span className="text-xl tracking-wide" style={{ fontWeight: 800 }}>DECORIZZ</span>
-            </div>
+            </Link>
           </div>
 
           {/* Company */}
@@ -57,6 +57,16 @@ export function Footer() {
                 <div>
                   <p className="text-sm" style={{ fontWeight: 700 }}>Mail Us</p>
                   <p>info@decorizz.com</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-24 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0ea5a4', color: '#fff' }}>
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm" style={{ fontWeight: 700 }}>Address</p>
+                  <p>Gurugram road Near Subhash chowk Shaktifarm market Sitarganj</p>
+                  <p>Udham Singh Nagar 263151</p>
                 </div>
               </li>
             </ul>

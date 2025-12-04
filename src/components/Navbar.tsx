@@ -106,6 +106,7 @@ export function Navbar() {
               { to: '/shop', label: 'Frames' },
               { to: '/about', label: 'About us' },
               { to: '/gallery', label: 'Gallery' },
+              { to: '/contact', label: 'Contact' },
             ].map((item) => (
               <Link
                 key={item.to}
@@ -123,7 +124,7 @@ export function Navbar() {
             ))}
             
             {/* Decor by Room Dropdown */}
-            <div
+            {/* <div
               className="relative"
               onMouseEnter={() => setShowDecorDropdown(true)}
               onMouseLeave={() => setShowDecorDropdown(false)}
@@ -138,7 +139,7 @@ export function Navbar() {
                 </svg>
               </button>
 
-              {/* Horizontal Dropdown Menu */}
+             
               {showDecorDropdown && (
               <div className="absolute left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 animate-fadeIn z-50">
                 <div className="p-4">
@@ -175,7 +176,7 @@ export function Navbar() {
                 </div>
               </div>
               )}
-            </div>
+            </div> */}
           </div>
 
           {/* Search Bar - Desktop */}

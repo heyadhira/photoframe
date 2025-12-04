@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { ProductCard } from "../components/ProductCard";
-import { Star } from "lucide-react";
+import { Star, Leaf, Palette, Brush, ShieldCheck } from "lucide-react";
 import { projectId, publicAnonKey } from "../utils/supabase/info";
 
 import AOS from "aos";
@@ -111,7 +111,7 @@ const scrollBestSellerRight = () => {
 };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen about-theme content-offset">
       <Navbar />
 <section className="hero-section">
   <Carousel opts={{ loop: true, align: "center", slidesToScroll: 1 }} setApi={(api) => setHeroApi(api)} className="w-screen overflow-hidden">
@@ -130,11 +130,11 @@ const scrollBestSellerRight = () => {
   </Carousel>
   <div className="hero-content">
     <div className="hero-container text-left">
-      <h1 className="hero-title">Discover <span className="accent">300+</span> Modern</h1>
-      <h2 className="hero-subtitle">Wall Frames</h2>
+      <h1 className="hero-title"><span className="text-white">Discover</span> <span className="accent">300+</span> <span className="text-white">Modern</span></h1>
+      <h2 className="hero-subtitle"><span className="text-white">Wall Frames</span></h2>
       <div className="hero-buttons">
-        <Link to="/shop" className="hero-btn hero-btn-primary">Shop Now</Link>
-        <Link to="/contact" className="hero-btn hero-btn-outline">Contact us</Link>
+        <Link to="/shop" className="premium-btn-white">Shop Now</Link>
+        <Link to="/contact" className="premium-btn-white">Contact us</Link>
       </div>
       <div className="hero-caption">300+ Collection of premium frame</div>
     </div>
@@ -151,7 +151,10 @@ const scrollBestSellerRight = () => {
 
   {/* Heading */}
   <div className="text-center mb-8 fade-up">
-    <h2 className="text-4xl lg:text-5xl font-bold text-gray-900" style={{ fontFamily: 'Georgia, serif', letterSpacing: '.5px' }}>Explore Frames for Every Room</h2>
+    <h2 className="section-title">
+      <span className="text-[#3b2f27]">Explore</span>
+      <span style={{ color: '#14b8a6' }}> Frames</span> for Every Room
+    </h2>
   </div>
   <div className="flex justify-center gap-3 mb-10">
     {(['All','Rolled','Canvas','Frame'] as const).map(opt => (
@@ -253,7 +256,7 @@ const scrollBestSellerRight = () => {
       {/* LEFT */}
       <div className="space-y-8 fade-left">
         <h2 className="text-5xl lg:text-6xl font-bold text-white pb-6 leading-tight">
-          Custom <br />
+          <span className="text-white">Custom</span> <br />
           <span
             style={{
               fontFamily: "Georgia, serif",
@@ -262,7 +265,7 @@ const scrollBestSellerRight = () => {
               fontSize: "4rem",
             }}
           >
-            Canvas
+           <span className="text-white">Canvas</span> 
           </span>
         </h2>
 
@@ -346,18 +349,22 @@ const scrollBestSellerRight = () => {
         {
           title: "Sourcing",
           desc: "Ethically sourced materials from sustainable forests and trusted artisan partners worldwide.",
+          icon: Leaf,
         },
         {
           title: "Design",
           desc: "Contemporary and timeless designs crafted to complement any home aesthetic perfectly.",
+          icon: Palette,
         },
         {
           title: "Crafting",
           desc: "Handcrafted by skilled artisans using time-honored techniques and precision tools.",
+          icon: Brush,
         },
         {
-          title: "Quality Assura",
+          title: "Quality Assurance",
           desc: "Every frame undergoes rigorous quality checks to ensure it meets our standards.",
+          icon: ShieldCheck,
         },
       ].map((item, idx) => (
         <div
@@ -373,30 +380,22 @@ const scrollBestSellerRight = () => {
             alignItems: "center",
             textAlign: "center",
             boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
+            border: "2px solid #14b8a6",
           }}
         >
 
           {/* Circular Icon */}
           <div
-            className="w-24 h-24 rounded-full flex items-center justify-center mb-3 shadow-md"
+            className="w-20 h-20 rounded-2xl flex items-center justify-center mb-3"
             style={{
-              backgroundColor: "#14b8a6",
-              color: "white",
+              backgroundColor: "#ffffff",
+              boxShadow: "inset 0 2px 6px rgba(0,0,0,.06), 0 6px 12px rgba(0,0,0,.08)",
             }}
           >
-            <svg
-              className="w-12 h-12"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            {(() => {
+              const Icon = (item as any).icon;
+              return <Icon className="w-10 h-10" color="#14b8a6" />;
+            })()}
           </div>
 
           {/* Title */}
@@ -448,26 +447,26 @@ const scrollBestSellerRight = () => {
       {/* TITLE */}
       <div className="space-y-2">
         <h2 className="text-4xl lg:text-5xl font-serif font-bold">
-          Wall
+          <span className="text-white">Wall</span>
         </h2>
         <h1 className="text-6xl lg:text-7xl font-serif font-extrabold">
           Art
         </h1>
         <h2 className="text-4xl lg:text-5xl font-serif font-bold">
-          Collection
+         <span className="text-white">Collection</span> 
         </h2>
       </div>
 
       {/* DESCRIPTION */}
-      <p className="text-gray-100 max-w-md leading-relaxed text-lg">
+      <p className="text-gray-100 max-w-md leading-relaxed text-lg"><span className="text-white">
         Discover our curated collection of premium wall décor frames — 
         from elegant minimalist pieces to luxurious handcrafted artwork.
-      </p>
+      </span></p>
 
       {/* BUTTON */}
       <Link
         to="/shop"
-        className="text-black  inline-block px-8 py-3 rounded-lg font-medium hover:scale-105 hero-btn-outline"
+        className="premium-btn-white inline-block"
       >
         Explore Collection
       </Link>
@@ -562,11 +561,10 @@ const scrollBestSellerRight = () => {
                 className="inline-block px-6 py-3 rounded-full transition shadow-md" 
                 style={{ 
                   backgroundColor: '#14b8a6', 
-                  color: 'white', 
+                  color: 'black', 
                   fontWeight: 500 
                 }} 
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'} 
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'} 
+                
               > 
                 View Customer Gallery 
               </Link> 

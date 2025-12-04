@@ -31,6 +31,7 @@ import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminGallery from './pages/admin/AdminGallery';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminDelivery from './pages/admin/AdminDelivery';
+import AdminContacts from './pages/admin/AdminContacts';
 import DecorByRoomPage from './pages/DecorByRoomPage';
 import ContactUsPage from './pages/ContactUsPage';
 import { WhatsappButton } from './components/WhatsappButton';
@@ -227,6 +228,10 @@ function App() {
           <Route
             path="/admin/delivery"
             element={user?.role === 'admin' ? <AdminDelivery /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/contacts"
+            element={user?.role === 'admin' ? <AdminContacts /> : <Navigate to="/login" />}
           />
         </Routes>
         <WhatsappButton />

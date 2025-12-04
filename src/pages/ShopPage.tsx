@@ -280,14 +280,14 @@ export default function ShopPage() {
     filters.categories.length;
 
   return (
-    <div className="min-h-screen bg-white content-offset">
+    <div className="min-h-screen about-theme content-offset">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl lg:text-4xl" style={{ fontWeight: 700, color: '#1f2937' }}>
-            Shop All Frames
+          <h1 className="section-title">
+            <span className="text-[#3b2f27]">Shop</span> <span style={{ color: '#14b8a6' }}>All Frames</span>
           </h1>
           {/* <button
             onClick={() => setShowFilters(!showFilters)}
@@ -303,20 +303,13 @@ export default function ShopPage() {
           </button> */}
 
           <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="lg:hidden flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-500 text-black px-6 py-4 rounded-xl shadow-lg hover:from-teal-600 hover:to-blue-600 transition-all transform active:scale-95 rounded-lg"
-                  style={{
-                    backgroundColor: '#14b8a6',
-                    color: 'white',
-                    fontWeight: 500
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'}
-                >
-                  <Filter className="w-5 h-5" />
-                  <span className="font-semibold">Filters</span>
+            onClick={() => setShowFilters(!showFilters)}
+            className="lg:hidden premium-btn flex items-center gap-2"
+          >
+            <Filter className="w-5 h-5" />
+            <span className="font-semibold">Filters</span>
             {activeFilterCount > 0 && (
-              <span className="ml-1 bg-black text-teal-600 text-xs px-2 py-0.5 rounded-lg font-bold">
+              <span className="ml-1 bg-white/90 text-teal-700 text-xs px-2 py-0.5 rounded-full font-bold">
                 {activeFilterCount}
               </span>
             )}
@@ -643,14 +636,7 @@ export default function ShopPage() {
 
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="mt-5 px-6 py-2 rounded-lg transition"
-                  style={{
-                    backgroundColor: '#14b8a6',
-                    color: 'white',
-                    fontWeight: 500
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'}
+                  className="premium-btn flex-1"
                 >
                   Show {filteredProducts.length} Products
                 </button>
@@ -764,14 +750,7 @@ export default function ShopPage() {
                 <p className="text-gray-500 text-lg">No products match your filters</p>
                 <button
                   onClick={clearFilters}
-                  className="mt-4 px-6 py-2 rounded-lg transition"
-                  style={{
-                    backgroundColor: '#14b8a6',
-                    color: 'white',
-                    fontWeight: 500
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0d9488'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#14b8a6'}
+                  className="premium-btn"
                 >
                   Clear All Filters
                 </button>
