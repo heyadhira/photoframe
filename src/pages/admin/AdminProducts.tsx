@@ -7,6 +7,16 @@ import AdminSidebar from "./AdminSidebar";
 
 export default function AdminProducts() {
   const { accessToken } = useContext(AuthContext);
+
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -23,8 +33,16 @@ export default function AdminProducts() {
     category: "Home Decor",
     material: "Wood",
     image: "",
-    colors: ["White", "Black","Wood", "Gold", "Brown", "silver"],
-    sizes: ["8x10", "10x12", "18×24", "20X30","24x36", "30x40", "36x48"],
+    colors: ["White", "Black", "Brown"],
+    sizes: [
+      "8X12", "12X18", "18X24", "20X30", "24X36", "30X40", "36X48", "48X66",
+      "18X18", "24X24", "36X36", "20X20", "30X30"
+    ],
+    roomCategory: "",
+    layout: "",
+    subsection: "Basic",
+    format: "Rolled",
+    frameColor: "Black",
   });
 
   // Fetch Products
@@ -110,6 +128,9 @@ export default function AdminProducts() {
         image: product.image,
         colors: product.colors || [],
         sizes: product.sizes || [],
+        subsection: product.subsection || "Basic",
+        format: product.format || "Rolled",
+        frameColor: product.frameColor || "Black",
       });
     } else {
       setEditingProduct(null);
@@ -120,8 +141,16 @@ export default function AdminProducts() {
         category: "Home Decor",
         material: "Wood",
         image: "",
-        colors: ["White", "Black","Wood", "Gold", "Brown", "silver"],
-        sizes: ["8x10", "10x12", "18×24", "20X30","24x36", "30x40", "36x48"],
+        colors: ["White", "Black", "Brown"],
+        sizes: [
+          "8X12", "12X18", "18X24", "20X30", "24X36", "30X40", "36X48", "48X66",
+          "18X18", "24X24", "36X36", "20X20", "30X30"
+        ],
+        roomCategory: "",
+        layout: "",
+        subsection: "Basic",
+        format: "Rolled",
+        frameColor: "Black",
       });
     }
 
@@ -196,10 +225,10 @@ export default function AdminProducts() {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Admin Sidebar */}
-      <AdminSidebar />
+      <AdminSidebar onSidebarWidthChange={(w) => setSidebarWidth(w)} />
 
       {/* Main Content */}
-      <div className="md:ml-64 w-full p-4 md:p-8">
+      <div className="w-full pt-16 p-4 md:p-8" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-semibold text-gray-900">
             Manage Products
@@ -226,6 +255,9 @@ export default function AdminProducts() {
                   <th className="px-6 py-3 text-left text-gray-900">Image</th>
                   <th className="px-6 py-3 text-left text-gray-900">Name</th>
                   <th className="px-6 py-3 text-left text-gray-900">Category</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Subsection</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Format</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Frame Color</th>
                   <th className="px-6 py-3 text-left text-gray-900">Price</th>
                   <th className="px-6 py-3 text-left text-gray-900">Actions</th>
                 </tr>
@@ -243,9 +275,10 @@ export default function AdminProducts() {
                     </td>
 
                     <td className="px-6 py-4 text-gray-900">{product.name}</td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {product.category}
-                    </td>
+                    <td className="px-6 py-4 text-gray-600">{product.category}</td>
+                    <td className="px-6 py-4 text-gray-600">{product.subsection || '-'}</td>
+                    <td className="px-6 py-4 text-gray-600">{product.format || '-'}</td>
+                    <td className="px-6 py-4 text-gray-600">{product.frameColor || '-'}</td>
                     <td className="px-6 py-4 text-gray-900">
                       ₹{product.price.toFixed(2)}
                     </td>
@@ -276,38 +309,40 @@ export default function AdminProducts() {
       </div>
 
 {showModal && (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto pb-6 pt-6">
+    
+    <div className="min-h-screen flex justify-center items-start py-10 px-4">
+      
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-none animate-fadeIn">
 
-    {/* MODAL BOX */}
-    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden animate-fadeIn">
+        {/* HEADER */}
+        <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">
+              {editingProduct ? "Edit Product" : "Add New Product"}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {editingProduct ? "Update product details" : "Fill in the details to create a new product"}
+            </p>
+          </div>
 
-      {/* HEADER with Gradient */}
-      <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-        <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {editingProduct ? "Edit Product" : "Add New Product"}
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            {editingProduct ? "Update product details" : "Fill in the details to create a new product"}
-          </p>
+          <button
+            onClick={() => setShowModal(false)}
+            className="hover:bg-white/50 p-2 rounded-full transition-all hover:rotate-90 duration-300"
+          >
+            <X className="w-6 h-6 text-gray-700" />
+          </button>
         </div>
 
-        <button
-          onClick={() => setShowModal(false)}
-          className="hover:bg-white/50 p-2 rounded-full transition-all hover:rotate-90 duration-300"
-        >
-          <X className="w-6 h-6 text-gray-700" />
-        </button>
-      </div>
+        {/* BODY SCROLLER */}
+        <div className="max-h-[80vh] overflow-y-auto px-6 py-6 space-y-6">
+          {/** FORM CONTENT HERE **/}
 
-      {/* BODY - Scrollable with Custom Scrollbar */}
-      <div className="p-6 pr-2 max-h-[calc(90vh-200px)] overflow-y-scroll custom-scrollbar">
-
-        {/* FORM (NO MAX-WRAPPER) */}
+          {/* FORM (NO MAX-WRAPPER) */}
         <form onSubmit={saveProduct} className="space-y-6">
 
           {/* BASIC INFO SECTION */}
-          <div className="border-b pb-6">
+          <div className="border-b pb-4">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded"></span>
               Basic Information
@@ -386,6 +421,52 @@ export default function AdminProducts() {
                 <option value="Spiritual">Spiritual</option>
               </select>
             </div>
+
+            {/* Subsection */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Subsection</label>
+                <select
+                  className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input"
+                  value={formData.subsection}
+                  onChange={(e) => setFormData({ ...formData, subsection: e.target.value })}
+                >
+                  <option value="Basic">Basic</option>
+                  <option value="2-Set">2-Set</option>
+                  <option value="3-Set">3-Set</option>
+                  <option value="Square">Square</option>
+                </select>
+              </div>
+
+              {/* Format */}
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Format</label>
+                <select
+                  className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input"
+                  value={formData.format}
+                  onChange={(e) => setFormData({ ...formData, format: e.target.value })}
+                >
+                  <option value="Rolled">Rolled</option>
+                  <option value="Canvas">Canvas</option>
+                  <option value="Frame">Frame</option>
+                </select>
+              </div>
+
+              {/* Frame Color */}
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Frame Color</label>
+                <select
+                  className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input"
+                  value={formData.frameColor}
+                  onChange={(e) => setFormData({ ...formData, frameColor: e.target.value })}
+                  disabled={formData.format !== 'Frame'}
+                >
+                  <option value="White">White</option>
+                  <option value="Black">Black</option>
+                  <option value="Brown">Brown</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* MATERIAL */}
@@ -462,10 +543,10 @@ export default function AdminProducts() {
             <label className="block font-medium text-gray-700 mb-2">Product Image *</label>
             
             {/* Image Preview */}
-            {imagePreview && (
+            {(imagePreview || formData.image) && (
               <div className="mb-4 relative">
                 <img 
-                  src={imagePreview} 
+                  src={imagePreview || formData.image} 
                   alt="Preview" 
                   className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
                 />
@@ -480,27 +561,44 @@ export default function AdminProducts() {
                 >
                   <X className="w-4 h-4" />
                 </button>
+
+                <div className="mt-3">
+                  <label htmlFor="product-image-input" className="inline-block px-4 py-2 rounded-lg border-2 text-sm font-semibold cursor-pointer"
+                    style={{ borderColor: '#d1d5db', color: '#374151' }}
+                  >
+                    Replace Image
+                  </label>
+                  <input
+                    id="product-image-input"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </div>
               </div>
             )}
 
-            {/* File Input */}
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                  <p className="text-xs text-gray-500">PNG, JPG, WEBP (MAX. 5MB)</p>
-                </div>
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </label>
-            </div>
+            {/* File Input - shown only when no preview */}
+            {!(imagePreview || formData.image) && (
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                    <p className="text-xs text-gray-500">PNG, JPG, WEBP (MAX. 5MB)</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </label>
+              </div>
+            )}
           </div>
           </div>
 
@@ -514,7 +612,7 @@ export default function AdminProducts() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {["White", "Black", "Wood", "Gold", "Brown", "Silver"].map((color) => (
+            {["White", "Black", "Brown"].map((color) => (
               <label
                 key={color}
                 className="flex items-center gap-2 border border-gray-300 
@@ -546,7 +644,7 @@ export default function AdminProducts() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {["8x10", "10x12", "18x24", "20x30", "24x36", "30x40", "36x48"].map((size) => (
+            {["8X12", "12X18", "18X24", "20X30", "24X36", "30X40", "36X48", "48X66", "18X18", "24X24", "36X36", "20X20", "30X30"].map((size) => (
               <label
                 key={size}
                 className="flex items-center gap-2 border border-gray-300 
@@ -584,7 +682,7 @@ export default function AdminProducts() {
                 </>
               ) : (
                 <>
-                  {editingProduct ? "? Update Product" : "? Create Product"}
+                  {editingProduct ? "Update Product" : "Create Product"}
                 </>
               )}
             </button>
@@ -600,10 +698,15 @@ export default function AdminProducts() {
           </div>
 
         </form>
+        </div>
+
       </div>
+
     </div>
+
   </div>
 )}
+
 
       {/* Custom Scrollbar Styles */}
       <style>{`
@@ -644,8 +747,17 @@ export default function AdminProducts() {
         /* Smooth scroll behavior */
         .custom-scrollbar {
           scroll-behavior: smooth;
-          overflow-y: scroll !important;
+          overflow-y: auto;
+
         }
+
+        .custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 #f1f5f9;
+  scroll-behavior: smooth;
+  overflow-y: auto;
+}
+
 
         /* Form input focus effects */
         .form-input:focus {

@@ -32,6 +32,7 @@ import AdminGallery from './pages/admin/AdminGallery';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminDelivery from './pages/admin/AdminDelivery';
 import DecorByRoomPage from './pages/DecorByRoomPage';
+import ContactUsPage from './pages/ContactUsPage';
 import { WhatsappButton } from './components/WhatsappButton';
 
 
@@ -184,7 +185,9 @@ function App() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/testimonials" element={<TestimonialsPage />} />
-          <Route path="/search" element={<SearchPage />} />`n          <Route path="/decor-by-room" element={<DecorByRoomPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/decor-by-room" element={<DecorByRoomPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/admin-signup" element={<AdminSignupPage />} />

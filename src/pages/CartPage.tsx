@@ -65,7 +65,11 @@ export default function CartPage() {
             productId,
             quantity: newQty - currentItem.quantity,
             size: currentItem.size,
-            color: currentItem.color
+            color: currentItem.color,
+            format: currentItem.format,
+            frameColor: currentItem.frameColor,
+            price: currentItem.price,
+            subsection: currentItem.subsection,
           })
         }
       );
@@ -104,8 +108,8 @@ export default function CartPage() {
     if (!cart?.items) return 0;
 
     return cart.items.reduce((sum: number, item: any) => {
-      const product = products.find(p => p.id === item.productId);
-      return sum + (product?.price || 0) * item.quantity;
+      const price = item.price ?? (products.find(p => p.id === item.productId)?.price || 0);
+      return sum + price * item.quantity;
     }, 0);
   };
 
@@ -195,7 +199,7 @@ export default function CartPage() {
                           {item.color} • {item.size}
                         </p>
                         <p className="text-lg font-semibold text-gray-900">
-                          ₹{product.price.toFixed(2)}
+                          ₹{(item.price ?? product.price).toFixed(2)}
                         </p>
                       </div>
 

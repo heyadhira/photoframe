@@ -85,9 +85,10 @@ export default function OrderSuccessPage() {
     })}`, 14, isCod ? 73 : 66);
 
     // Shipping Address Section
+    const shippingStartY = isCod ? 80 : 72;
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(12);
-    doc.text("Shipping Address:", 14, 72);
+    doc.text("Shipping Address:", 14, shippingStartY);
 
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(11);
@@ -98,7 +99,7 @@ export default function OrderSuccessPage() {
       `${order.shippingAddress.city || 'N/A'}, ${order.shippingAddress.state || 'N/A'} - ${order.shippingAddress.zipCode || 'N/A'}`
     ];
 
-    let yPos = 80;
+    let yPos = shippingStartY + 8;
     addressLines.forEach(line => {
       doc.text(line, 14, yPos);
       yPos += 7;
@@ -110,8 +111,8 @@ export default function OrderSuccessPage() {
       item.size || 'N/A',
       item.color || 'N/A',
       item.quantity.toString(),
-      `Rs. ${item.price.toFixed(2)}`,
-      `Rs. ${(item.price * item.quantity).toFixed(2)}`,
+      `Rs. ${Number(item.price).toFixed(2)}`,
+      `Rs. ${(Number(item.price) * item.quantity).toFixed(2)}`,
     ]);
 
     autoTable(doc, {

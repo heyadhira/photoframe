@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
 import { AuthContext } from '../App';
 import { cartEvents } from '../utils/cartEvents';
@@ -15,6 +15,10 @@ export function Navbar() {
   const [showMobileProfileDropdown, setShowMobileProfileDropdown] = useState(false);
   const { user, logout, accessToken } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [atTop, setAtTop] = useState(true);
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path;
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
     if (user && accessToken) {
@@ -25,6 +29,20 @@ export function Navbar() {
       return unsubscribe;
     }
   }, [user, accessToken]);
+
+  useEffect(() => {
+    const onScroll = () => setAtTop(window.scrollY < 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const fetchCartCount = async () => {
     try {
@@ -48,8 +66,10 @@ export function Navbar() {
     }
   };
 
+  const transparent = !isMobile && atTop && location.pathname === '/';
+
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50" style={{ borderBottom: '1px solid #e5e7eb' }}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 pb-2 ${transparent ? '' : 'shadow-sm'}`} style={{ backgroundColor: transparent ? 'transparent' : '#ffffff', borderBottom: transparent ? 'none' : '1px solid #e5e7eb' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -75,48 +95,32 @@ export function Navbar() {
                 color: '#1f2937'
               }}
             >
-              DECORIZE
+              DECORIZZ
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
-              className="text-gray-700 transition"
-              style={{ fontWeight: 500 }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
-            >
-              Home
-            </Link>
-            <Link 
-              to="/shop" 
-              className="text-gray-700 transition"
-              style={{ fontWeight: 500 }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
-            >
-              Frames
-            </Link>
-            <Link 
-              to="/about" 
-              className="text-gray-700 transition"
-              style={{ fontWeight: 500 }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
-            >
-              About
-            </Link>
-            <Link 
-              to="/gallery" 
-              className="text-gray-700 transition"
-              style={{ fontWeight: 500 }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
-            >
-              Gallery
-            </Link>
+          <div className="hidden md:flex items-center space-x-4">
+            {[
+              { to: '/', label: 'Home' },
+              { to: '/shop', label: 'Frames' },
+              { to: '/about', label: 'About us' },
+              { to: '/gallery', label: 'Gallery' },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="rounded-full px-4 py-2 text-sm"
+                style={{
+                  backgroundColor: isActive(item.to) ? 'white' : '#e9e5dc',
+                  color: '#1f2937',
+                  boxShadow: isActive(item.to) ? '0 0 0 2px #14b8a6' : 'none',
+                  fontWeight: 600,
+                }}
+              >
+                {item.label}
+              </Link>
+            ))}
             
             {/* Decor by Room Dropdown */}
             <div
@@ -182,7 +186,7 @@ export function Navbar() {
                 placeholder="Search frames..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-4 pr-10 py-2 border rounded-lg focus:outline-none"
+                className="pl-4 pr-12 py-2 border rounded-lg focus:outline-none"
                 style={{ 
                   borderColor: '#d1d5db',
                   width: '240px',
@@ -197,15 +201,10 @@ export function Navbar() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 text-gray-500 transition"
+              <Search
+                className="absolute right-2 top-1/2 w-5 h-5 text-gray-500 pointer-events-none"
                 style={{ transform: 'translateY(-50%)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
-              >
-                <Search className="w-5 h-5" />
-              </button>
+              />
             </div>
           </form>
 
@@ -215,9 +214,7 @@ export function Navbar() {
             {/* Cart Icon */}
             <Link 
               to="/cart" 
-              className="text-gray-700 relative transition bg-[#14b8a6] p-2 rounded-md"
-              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
+              className="text-gray-700 relative transition"
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
@@ -299,9 +296,10 @@ export function Navbar() {
                 to="/login"
                 aria-label="Login"
                 title="Login"
-                className="hidden md:flex items-center justify-center bg-[#14b8a6] p-2 rounded-md transition"
+                className="hidden md:flex items-center justify-center rounded-full px-6 py-2 transition"
+                style={{ backgroundColor: '#14b8a6', color: 'white', fontWeight: 700 }}
               >
-                <User className="w-5 h-5 text-black" />
+                Log In
               </Link>
             )}
 
@@ -521,7 +519,7 @@ export function Navbar() {
                   placeholder="Search frames..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-10 py-2 border rounded-lg focus:outline-none"
+                  className="w-full pl-4 pr-12 py-2 border rounded-lg focus:outline-none"
                   style={{ 
                     borderColor: '#d1d5db',
                     fontSize: '14px'
@@ -535,13 +533,10 @@ export function Navbar() {
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 text-gray-500"
+                <Search
+                  className="absolute right-2 top-1/2 w-5 h-5 text-gray-500 pointer-events-none"
                   style={{ transform: 'translateY(-50%)' }}
-                >
-                  <Search className="w-5 h-5" />
-                </button>
+                />
               </div>
             </form>
           </div>

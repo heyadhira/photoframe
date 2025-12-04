@@ -1026,6 +1026,9 @@ app.post("/make-server-52d68140/gallery/upload", async (c) => {
     const { data: urlData } = supabase.storage
       .from("make-52d68140-gallery")
       .getPublicUrl(filePath);
+    const { data: thumbData } = supabase.storage
+      .from("make-52d68140-gallery")
+      .getPublicUrl(filePath, { transform: { width: 400, quality: 75 } });
 
     // SAVE IN KV
     const galleryId = `${Date.now()}-${Math.random()
@@ -1039,6 +1042,7 @@ app.post("/make-server-52d68140/gallery/upload", async (c) => {
       category,
       year,
       image: urlData.publicUrl,
+      thumbUrl: thumbData?.publicUrl || urlData.publicUrl,
       filePath,
       createdAt: new Date().toISOString(),
     };

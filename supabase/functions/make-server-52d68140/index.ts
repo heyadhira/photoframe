@@ -441,17 +441,17 @@ app.post('/make-server-52d68140/cart', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
     
-    const { productId, quantity, size, color } = await c.req.json();
+  const { productId, quantity, size, color, format, frameColor, price, subsection } = await c.req.json();
     
     const cart = await kv.get(`cart:${user.id}`) || { items: [] };
-    const existingIndex = cart.items.findIndex(
-      (item: any) => item.productId === productId && item.size === size && item.color === color
-    );
+  const existingIndex = cart.items.findIndex(
+    (item: any) => item.productId === productId && item.size === size && item.color === color && item.format === format
+  );
     
     if (existingIndex >= 0) {
       cart.items[existingIndex].quantity += quantity;
     } else {
-      cart.items.push({ productId, quantity, size, color });
+      cart.items.push({ productId, quantity, size, color, format, frameColor, price, subsection });
     }
     
     await kv.set(`cart:${user.id}`, cart);
@@ -909,6 +909,27 @@ app.get('/make-server-52d68140/stats', async (c) => {
   }
 });
 
+// Users list (admin-only)
+app.get('/make-server-52d68140/users', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userProfile = await kv.get(`user:${user.id}`);
+    if (!userProfile || userProfile.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const users = await kv.getByPrefix('user:');
+    return c.json({ users });
+  } catch (error) {
+    console.log('Get users error:', error);
+    return c.json({ error: 'Failed to fetch users' }, 500);
+  }
+});
+
 // Password Reset Routes
 app.post('/make-server-52d68140/auth/forgot-password', async (c) => {
   try {
@@ -1305,4 +1326,3 @@ app.put('/make-server-52d68140/payments/:id', async (c) => {
     return c.json({ error: 'Failed to update payment' }, 500);
   }
 });
-

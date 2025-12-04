@@ -8,6 +8,15 @@ import AdminSidebar from "./AdminSidebar";
 export default function AdminTestimonials() {
   const { accessToken } = useContext(AuthContext);
 
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -101,10 +110,10 @@ export default function AdminTestimonials() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <AdminSidebar />
+      <AdminSidebar onSidebarWidthChange={(w) => setSidebarWidth(w)} />
 
       {/* Main Content */}
-      <div className="md:ml-64 w-full p-4 md:p-8">
+      <div className="w-full pt-16 p-4 md:p-8" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-semibold text-gray-900">

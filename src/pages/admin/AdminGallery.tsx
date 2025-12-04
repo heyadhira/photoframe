@@ -8,9 +8,20 @@ import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { Plus, Trash2, Upload, Image as ImageIcon, X } from "lucide-react";
 
 import { toast } from "sonner";
+import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 
 export default function AdminGallery() {
   const { accessToken } = useContext(AuthContext);
+
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const [galleryItems, setGalleryItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -153,11 +164,11 @@ export default function AdminGallery() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <AdminSidebar />
+      <AdminSidebar onSidebarWidthChange={(w) => setSidebarWidth(w)} />
 
       {/* Main Page */}
-      <div className="md:ml-64 p-4 md:p-8 w-full">
-        <div className="max-w-7xl mx-auto">
+      <div className="p-4 md:p-8 w-full" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
+        <div className="max-w-7xl mx-auto pt-12">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -192,8 +203,10 @@ export default function AdminGallery() {
                   key={item.id}
                   className="bg-white rounded-lg shadow overflow-hidden"
                 >
-                  <img
-                    src={item.image}
+                  <ImageWithFallback
+                    src={item.thumbUrl || item.image}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-56 object-cover"
                     alt={item.title}
                   />
@@ -230,7 +243,7 @@ export default function AdminGallery() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden animate-fadeIn">
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
               <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent">
                   Add New Photo
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">Upload a photo to your gallery</p>
@@ -272,7 +285,7 @@ export default function AdminGallery() {
 
                 <div className="flex items-center justify-center w-full">
                   <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <div className="flex flex-col items-center justify-center pb-4">
                       <Upload className="w-12 h-12 mb-3 text-gray-400" />
                       <p className="mb-2 text-sm text-gray-500">
                         <span className="font-semibold">Click to upload</span> or drag and drop

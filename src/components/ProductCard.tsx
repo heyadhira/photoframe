@@ -4,7 +4,7 @@ import { Heart, ShoppingCart, Eye } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { AuthContext } from '../App';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 type Product = {
   id: string;
@@ -18,9 +18,10 @@ type Product = {
 
 type ProductCardProps = {
   product: Product;
+  overridePrice?: number;
 };
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, overridePrice }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const { user, accessToken } = useContext(AuthContext);
 
@@ -70,24 +71,14 @@ export function ProductCard({ product }: ProductCardProps) {
         />
         
         {/* Overlay buttons */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-          <button
-            onClick={handleAddToWishlist}
-            className="bg-white p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} />
-          </button>
-          <div className="bg-white p-2 rounded-full">
-            <Eye className="w-5 h-5 text-gray-700" />
-          </div>
-        </div>
+       
       </div>
 
       <div className="p-4">
         <p className="text-sm text-gray-500 mb-1">{product.category}</p>
         <h3 className="text-gray-900 mb-2">{product.name}</h3>
         <div className="flex items-center justify-between">
-          <span className="text-gray-900">₹ {product.price.toFixed(2)}</span>
+          <span className="text-gray-900">₹ {(overridePrice ?? product.price).toFixed(2)}</span>
           {product.colors && product.colors.length > 0 && (
             <div className="flex gap-1">
               {product.colors.slice(0, 3).map((color, index) => (

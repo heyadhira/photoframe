@@ -71,8 +71,8 @@ export default function CheckoutPage() {
     if (!cart || !cart.items) return 0;
     
     return cart.items.reduce((total: number, item: any) => {
-      const product = products.find(p => p.id === item.productId);
-      return total + (product?.price || 0) * item.quantity;
+      const price = item.price ?? (products.find(p => p.id === item.productId)?.price || 0);
+      return total + price * item.quantity;
     }, 0);
   };
 
@@ -312,7 +312,10 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             size: item.size,
             color: item.color,
-            price: product?.price,
+            format: item.format,
+            frameColor: item.frameColor,
+            subsection: item.subsection,
+            price: item.price ?? product?.price,
           };
         }),
         shippingAddress: {
@@ -370,28 +373,28 @@ export default function CheckoutPage() {
 
       {/* Professional Processing Loader */}
       {processing && (
-        <div className="fixed inset-0 bg-gradient-to-br from-blue-900/95 via-purple-900/95 to-pink-900/95 backdrop-blur-md z-50 flex items-center justify-center animate-fadeIn">
+        <div className="fixed inset-0 bg-gradient-to-br from-teal-900/95 via-teal-800/95 to-teal-700/95 backdrop-blur-md z-[1000] flex items-center justify-center animate-fadeIn">
           <div className="relative">
             {/* Animated Background Circles */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-32 h-32 bg-blue-500/30 rounded-full animate-ping"></div>
-              <div className="absolute w-24 h-24 bg-purple-500/30 rounded-full animate-pulse"></div>
+              <div className="w-32 h-32 bg-teal-500/30 rounded-full animate-ping"></div>
+              <div className="absolute w-24 h-24 bg-teal-400/30 rounded-full animate-pulse"></div>
             </div>
             
             {/* Main Card */}
             <div className="relative bg-white rounded-3xl p-10 shadow-2xl text-center max-w-md mx-4 transform animate-slideUp">
               {/* Success Icon Animation */}
               <div className="relative w-24 h-24 mx-auto mb-6">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-spin-slow opacity-20"></div>
-                <div className="absolute inset-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <svg className="w-12 h-12 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute inset-0 rounded-full border-4 border-teal-500 border-t-transparent animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                   </svg>
                 </div>
               </div>
 
               {/* Text Content */}
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent mb-3">
                 Processing Payment
               </h3>
               <p className="text-gray-600 mb-6">
@@ -400,14 +403,14 @@ export default function CheckoutPage() {
 
               {/* Progress Bar */}
               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full animate-progress"></div>
+                <div className="h-full bg-gradient-to-r from-teal-500 via-teal-400 to-teal-300 rounded-full animate-progress"></div>
               </div>
 
               {/* Loading Dots */}
               <div className="flex justify-center gap-2 mt-6">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-                <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                <div className="w-3 h-3 bg-teal-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                <div className="w-3 h-3 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                <div className="w-3 h-3 bg-teal-300 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
               </div>
             </div>
           </div>

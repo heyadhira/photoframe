@@ -74,7 +74,7 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
       {/* TOGGLE BUTTON */}
       <button
         onClick={toggleSidebar}
-        className="fixed top-4 left-4 z-50 bg-gray-900 text-white p-3 rounded-lg shadow-lg"
+        className="fixed top-4 ml-2 left-4 z-50 bg-gray-900 text-white p-3 rounded-lg shadow-lg"
       >
         {isMobile && mobileOpen ? <X /> : <Menu />}
       </button>

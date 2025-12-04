@@ -23,8 +23,8 @@ const ROOM_OPTIONS = [
 ];
 
 const LAYOUT_OPTIONS = ['Portrait', 'Square', 'Landscape'];
-const SIZE_OPTIONS = ['8×12', '12×18', '18×24', '20×30', '24×36', '30×40', '36×48'];
-const COLOR_OPTIONS = ['White', 'Black', 'Wood', 'Gold', 'Brown', 'silver'];
+const SIZE_OPTIONS = ['8×12', '12×18', '18×24', '20×30', '24×36', '30×40', '36×48', '48×66', '18×18', '24×24', '36×36', '20×20', '30×30'];
+const COLOR_OPTIONS = ['White', 'Black', 'Brown'];
 const MATERIAL_OPTIONS = ['Wood', 'Metal', 'Plastic', 'Glass'];
 const CATEGORY_OPTIONS = [
   { name: 'Home Decor', count: 3 },
@@ -54,6 +54,9 @@ interface Product {
   material?: string;
   category?: string;
   createdAt?: string;
+  subsection?: 'Basic' | '2-Set' | '3-Set' | 'Square';
+  format?: 'Rolled' | 'Canvas' | 'Frame';
+  frameColor?: 'White' | 'Black' | 'Brown';
 }
 
 export default function ShopPage() {
@@ -82,6 +85,68 @@ export default function ShopPage() {
     priceMax: 10000,
     sortBy: 'popular',
   });
+
+  const [formatSubsection, setFormatSubsection] = useState<'All' | 'Rolled' | 'Canvas' | 'Frame'>('All');
+  const [subsectionChip, setSubsectionChip] = useState<'All' | 'Basic' | '2-Set' | '3-Set' | 'Square'>('All');
+
+  const BASIC_PRICE: Record<string, { Rolled: number | null; Canvas: number | null; Frame: number | null }> = {
+    '8X12': { Rolled: 679, Canvas: 800, Frame: 999 },
+    '12X18': { Rolled: 879, Canvas: 1100, Frame: 1299 },
+    '18X24': { Rolled: 1280, Canvas: 1699, Frame: 1799 },
+    '20X30': { Rolled: 1780, Canvas: 2599, Frame: 2799 },
+    '24X36': { Rolled: 1999, Canvas: 2999, Frame: 3299 },
+    '30X40': { Rolled: 3580, Canvas: 4599, Frame: 5199 },
+    '36X48': { Rolled: 3500, Canvas: 5799, Frame: 6499 },
+    '48X66': { Rolled: 5879, Canvas: 9430, Frame: null },
+    '18X18': { Rolled: 1199, Canvas: 1699, Frame: 1899 },
+    '24X24': { Rolled: 1599, Canvas: 2299, Frame: 2499 },
+    '36X36': { Rolled: 3199, Canvas: 4599, Frame: 4999 },
+    '20X20': { Rolled: 1299, Canvas: 1899, Frame: 1999 },
+    '30X30': { Rolled: 2199, Canvas: 3199, Frame: 3499 },
+  };
+
+  const TWOSET_PRICE: Record<string, { Rolled: number | null; Canvas: number | null; Frame: number | null }> = {
+    '8X12': { Rolled: 1299, Canvas: 1599, Frame: 1999 },
+    '12X18': { Rolled: 1899, Canvas: 2199, Frame: 2499 },
+    '18X24': { Rolled: 2499, Canvas: 3399, Frame: 3599 },
+    '20X30': { Rolled: 3799, Canvas: 5199, Frame: 5599 },
+    '24X36': { Rolled: 3999, Canvas: 5999, Frame: 6599 },
+    '30X40': { Rolled: 5799, Canvas: 9399, Frame: 10399 },
+    '36X48': { Rolled: 6999, Canvas: 11599, Frame: 12999 },
+    '48X66': { Rolled: 11799, Canvas: 18899, Frame: null },
+  };
+
+  const THREESET_PRICE: Record<string, { Rolled: number | null; Canvas: number | null; Frame: number | null }> = {
+    '8X12': { Rolled: 2099, Canvas: 2499, Frame: 2999 },
+    '12X18': { Rolled: 2699, Canvas: 3399, Frame: 3899 },
+    '18X24': { Rolled: 3899, Canvas: 5099, Frame: 5399 },
+    '20X30': { Rolled: 5399, Canvas: 7799, Frame: 8399 },
+    '24X36': { Rolled: 6999, Canvas: 8899, Frame: 9599 },
+    '30X40': { Rolled: 8699, Canvas: 14099, Frame: 15559 },
+    '36X48': { Rolled: 10599, Canvas: 17399, Frame: 19499 },
+    '48X66': { Rolled: 17699, Canvas: 28299, Frame: null },
+  };
+
+  const normalizeSize = (s?: string) => {
+    if (!s) return '';
+    const cleaned = s.replace(/\s+/g, '').toUpperCase().replace('×', 'X');
+    const parts = cleaned.split('X');
+    if (parts.length !== 2) return cleaned;
+    return `${parts[0]}X${parts[1]}`;
+  };
+
+  const computePriceFor = (
+    size: string,
+    format: 'Rolled' | 'Canvas' | 'Frame',
+    subsection?: 'Basic' | '2-Set' | '3-Set' | 'Square'
+  ) => {
+    const key = normalizeSize(size);
+    const table = subsection === '2-Set' ? TWOSET_PRICE : subsection === '3-Set' ? THREESET_PRICE : BASIC_PRICE;
+    const row = table[key];
+    if (!row) return undefined;
+    const value = row[format];
+    return value === null ? undefined : value ?? undefined;
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -215,7 +280,7 @@ export default function ShopPage() {
     filters.categories.length;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white content-offset">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -275,7 +340,10 @@ export default function ShopPage() {
             ></div>
 
             {/* Filter Panel */}
-            <div className="lg:w-64 bg-white rounded-t-3xl lg:rounded-lg shadow-2xl lg:shadow-sm fixed lg:static bottom-0 left-0 right-0 lg:inset-auto max-h-[85vh] lg:max-h-none overflow-hidden flex flex-col">
+            <div
+              className="lg:w-64 bg-white rounded-t-3xl lg:rounded-lg shadow-2xl lg:shadow-sm fixed lg:static bottom-0 left-0 right-0 lg:inset-auto max-h-[90vh] lg:max-h-none overflow-y-auto no-scrollbar flex flex-col"
+              style={{ overscrollBehavior: 'contain' }}
+            >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-teal-50 to-blue-50 lg:bg-white">
                 <div className="flex items-center gap-3">
@@ -624,6 +692,44 @@ export default function ShopPage() {
               </select>
             </div>
 
+            {/* Subsection Chips */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              {(['All','Basic','2-Set','3-Set','Square'] as const).map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setSubsectionChip(opt)}
+                  className="px-4 py-2 rounded-full border text-sm transition"
+                  style={{
+                    backgroundColor: subsectionChip === opt ? '#14b8a6' : 'white',
+                    color: subsectionChip === opt ? 'white' : '#374151',
+                    borderColor: subsectionChip === opt ? '#14b8a6' : '#d1d5db',
+                    fontWeight: 600,
+                  }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+
+            {/* Format Chips */}
+            <div className="flex flex-wrap gap-3 mb-6">
+              {(['All','Rolled','Canvas','Frame'] as const).map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setFormatSubsection(opt)}
+                  className="px-4 py-2 rounded-full border text-sm transition"
+                  style={{
+                    backgroundColor: formatSubsection === opt ? '#14b8a6' : 'white',
+                    color: formatSubsection === opt ? 'white' : '#374151',
+                    borderColor: formatSubsection === opt ? '#14b8a6' : '#d1d5db',
+                    fontWeight: 600,
+                  }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-12">
                 <div 
@@ -633,9 +739,25 @@ export default function ShopPage() {
               </div>
             ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+                {(filteredProducts.filter(p => {
+                  const byFormat = formatSubsection === 'All' ? true : (p.format === formatSubsection);
+                  const bySubsection = subsectionChip === 'All' ? true : (p.subsection === subsectionChip);
+                  return byFormat && bySubsection;
+                })).map(product => {
+                  const chosenSize = filters.sizes[0] || '';
+                  const effectiveSubsection = subsectionChip === 'All' ? (product.subsection || 'Basic') : subsectionChip;
+                  const overridePrice =
+                    formatSubsection !== 'All' && chosenSize
+                      ? computePriceFor(
+                          chosenSize,
+                          formatSubsection as 'Rolled' | 'Canvas' | 'Frame',
+                          effectiveSubsection as 'Basic' | '2-Set' | '3-Set' | 'Square'
+                        )
+                      : undefined;
+                  return (
+                    <ProductCard key={product.id} product={product} overridePrice={overridePrice} />
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">

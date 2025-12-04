@@ -569,9 +569,7 @@ async function sendOrderEmail(orderData: any, userEmail: string) {
               `).join('') || '<p>No items</p>'}
             </div>
 
-            <div style="margin-top: 30px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
-              <p style="margin: 0; color: #92400e;"><strong>&#9889; Action Required:</strong> Please process this order in the admin panel.</p>
-            </div>
+            
           </div>
 
           <div style="background: #1f2937; padding: 20px; text-align: center; color: white;">

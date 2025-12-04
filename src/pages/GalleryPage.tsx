@@ -3,6 +3,7 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { X, Image } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export default function GalleryPage() {
   const [galleryItems, setGalleryItems] = useState([]);
@@ -51,7 +52,7 @@ export default function GalleryPage() {
   const years = Object.keys(itemsByYear).sort((a, b) => parseInt(b) - parseInt(a));
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white content-offset">
       <Navbar />
 
       {/* HERO HEADER */}
@@ -87,7 +88,7 @@ export default function GalleryPage() {
 
       {/* CATEGORY FILTER */}
       <div className="max-w-7xl mx-auto px-4 py-10">
-        <div className="flex justify-center flex-wrap gap-4">
+        <div className="flex gap-3 h-scroll no-scrollbar -mx-4 px-4">
           {categories.map((category) => (
             <button
               key={category}
@@ -136,20 +137,17 @@ export default function GalleryPage() {
                     >
                       {imageLoading[item.id] !== false && (
                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                          <div className="w-8 h-8 border-3 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
-                      <img
-                        src={item.image}
+                      <ImageWithFallback
+                        src={item.thumbUrl || item.image}
                         alt={item.title}
                         loading="lazy"
+                        decoding="async"
                         onLoad={() => setImageLoading(prev => ({...prev, [item.id]: false}))}
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/400x400?text=Image+Not+Found';
-                          setImageLoading(prev => ({...prev, [item.id]: false}));
-                        }}
+                        onError={() => setImageLoading(prev => ({...prev, [item.id]: false}))}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 bg-white"
-                        style={{ display: imageLoading[item.id] === false ? 'block' : 'none' }}
                       />
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -188,9 +186,10 @@ export default function GalleryPage() {
 
           <div className="max-w-5xl max-h-[90vh] text-center" onClick={(e) => e.stopPropagation()}>
             <div className="relative inline-block">
-              <img
+              <ImageWithFallback
                 src={selectedImage.image}
                 alt={selectedImage.title}
+                decoding="async"
                 className="max-w-full max-h-[70vh] object-contain mx-auto mb-6 rounded-lg shadow-2xl"
               />
             </div>

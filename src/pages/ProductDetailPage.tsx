@@ -21,6 +21,8 @@ export default function ProductDetailPage() {
 
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedFormat, setSelectedFormat] = useState<'Rolled' | 'Canvas' | 'Frame'>('Rolled');
+  const [selectedFrameColor, setSelectedFrameColor] = useState<'White' | 'Black' | 'Brown'>('Black');
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -48,6 +50,13 @@ export default function ProductDetailPage() {
           setSelectedSize(data.product.sizes[0]);
         }
 
+        if (data.product.format) {
+          setSelectedFormat(data.product.format);
+        }
+        if (data.product.frameColor) {
+          setSelectedFrameColor(data.product.frameColor);
+        }
+
         fetchRelatedProducts(data.product.category);
       }
     } catch (error) {
@@ -55,6 +64,65 @@ export default function ProductDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const normalizeSize = (s?: string) => {
+    if (!s) return '';
+    const cleaned = s.replace(/\s+/g, '').toUpperCase().replace('×', 'X');
+    const parts = cleaned.split('X');
+    if (parts.length !== 2) return cleaned;
+    return `${parts[0]}X${parts[1]}`;
+  };
+
+  const BASIC_PRICE: Record<string, { Rolled: number | null; Canvas: number | null; Frame: number | null }> = {
+    '8X12': { Rolled: 679, Canvas: 800, Frame: 999 },
+    '12X18': { Rolled: 879, Canvas: 1100, Frame: 1299 },
+    '18X24': { Rolled: 1280, Canvas: 1699, Frame: 1799 },
+    '20X30': { Rolled: 1780, Canvas: 2599, Frame: 2799 },
+    '24X36': { Rolled: 1999, Canvas: 2999, Frame: 3299 },
+    '30X40': { Rolled: 3580, Canvas: 4599, Frame: 5199 },
+    '36X48': { Rolled: 3500, Canvas: 5799, Frame: 6499 },
+    '48X66': { Rolled: 5879, Canvas: 9430, Frame: null },
+    '18X18': { Rolled: 1199, Canvas: 1699, Frame: 1899 },
+    '24X24': { Rolled: 1599, Canvas: 2299, Frame: 2499 },
+    '36X36': { Rolled: 3199, Canvas: 4599, Frame: 4999 },
+    '20X20': { Rolled: 1299, Canvas: 1899, Frame: 1999 },
+    '30X30': { Rolled: 2199, Canvas: 3199, Frame: 3499 },
+  };
+
+  const TWOSET_PRICE: Record<string, { Rolled: number | null; Canvas: number | null; Frame: number | null }> = {
+    '8X12': { Rolled: 1299, Canvas: 1599, Frame: 1999 },
+    '12X18': { Rolled: 1899, Canvas: 2199, Frame: 2499 },
+    '18X24': { Rolled: 2499, Canvas: 3399, Frame: 3599 },
+    '20X30': { Rolled: 3799, Canvas: 5199, Frame: 5599 },
+    '24X36': { Rolled: 3999, Canvas: 5999, Frame: 6599 },
+    '30X40': { Rolled: 5799, Canvas: 9399, Frame: 10399 },
+    '36X48': { Rolled: 6999, Canvas: 11599, Frame: 12999 },
+    '48X66': { Rolled: 11799, Canvas: 18899, Frame: null },
+  };
+
+  const THREESET_PRICE: Record<string, { Rolled: number | null; Canvas: number | null; Frame: number | null }> = {
+    '8X12': { Rolled: 2099, Canvas: 2499, Frame: 2999 },
+    '12X18': { Rolled: 2699, Canvas: 3399, Frame: 3899 },
+    '18X24': { Rolled: 3899, Canvas: 5099, Frame: 5399 },
+    '20X30': { Rolled: 5399, Canvas: 7799, Frame: 8399 },
+    '24X36': { Rolled: 6999, Canvas: 8899, Frame: 9599 },
+    '30X40': { Rolled: 8699, Canvas: 14099, Frame: 15559 },
+    '36X48': { Rolled: 10599, Canvas: 17399, Frame: 19499 },
+    '48X66': { Rolled: 17699, Canvas: 28299, Frame: null },
+  };
+
+  const computePriceFor = (
+    size: string,
+    format: 'Rolled' | 'Canvas' | 'Frame',
+    subsection?: 'Basic' | '2-Set' | '3-Set' | 'Square'
+  ) => {
+    const key = normalizeSize(size);
+    const table = subsection === '2-Set' ? TWOSET_PRICE : subsection === '3-Set' ? THREESET_PRICE : BASIC_PRICE;
+    const row = table[key];
+    if (!row) return undefined;
+    const value = row[format];
+    return value === null ? undefined : value ?? undefined;
   };
 
   const fetchRelatedProducts = async (category: string) => {
@@ -90,6 +158,7 @@ export default function ProductDetailPage() {
     }
 
     try {
+      const overridePrice = computePriceFor(selectedSize, product.format || selectedFormat, product.subsection) ?? product.price;
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/cart`,
         {
@@ -103,6 +172,11 @@ export default function ProductDetailPage() {
             quantity,
             size: selectedSize,
             color: selectedColor,
+            // format removed from UI; keep product.format if present
+            format: product.format,
+            frameColor: product.frameColor,
+            price: overridePrice,
+            subsection: product.subsection,
           }),
         }
       );
@@ -222,7 +296,7 @@ export default function ProductDetailPage() {
             </h1>
 
             <p className="text-3xl font-semibold text-gray-900 mb-6">
-              ₹{product.price.toFixed(2)}
+              ₹{(computePriceFor(selectedSize, product.format || selectedFormat, product.subsection) ?? product.price).toFixed(2)}
             </p>
 
             <p className="text-gray-600 leading-relaxed mb-8">
@@ -275,6 +349,8 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Format section removed per request */}
 
             {/* Quantity */}
             <div className="mb-8">

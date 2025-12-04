@@ -16,6 +16,15 @@ import AdminSidebar from "./AdminSidebar";
 export default function AdminDashboard() {
   const { accessToken } = useContext(AuthContext);
 
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -112,10 +121,10 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[#f9fafb] flex">
 
       {/* SIDEBAR */}
-      <AdminSidebar />
+      <AdminSidebar onSidebarWidthChange={(w) => setSidebarWidth(w)} />
 
       {/* MAIN CONTENT */}
-      <div className="md:ml-64 w-full p-4 md:p-10 pt-20 md:pt-10">
+      <div className="w-full pt-16 p-4 md:p-10" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
 
         {/* PAGE TITLE */}
         <h1 className="text-4xl font-bold text-gray-900 mb-10 tracking-tight">

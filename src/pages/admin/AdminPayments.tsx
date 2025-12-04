@@ -7,6 +7,16 @@ import { toast } from 'sonner';
 
 export default function AdminPayments() {
   const { accessToken } = useContext(AuthContext);
+
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,9 +118,9 @@ export default function AdminPayments() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar />
+      <AdminSidebar onSidebarWidthChange={(w) => setSidebarWidth(w)} />
 
-      <div className="md:ml-64 p-4 md:p-8 w-full">
+      <div className="pt-16 p-4 md:p-8 w-full" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
