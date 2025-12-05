@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import AdminSidebar from './AdminSidebar';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../context/AuthContext';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { Truck, CreditCard, CheckCircle, XCircle, Clock, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
@@ -257,4 +257,3 @@ export default function AdminDelivery() {
     </div>
   );
 }
-

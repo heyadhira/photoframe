@@ -718,13 +718,13 @@ export default function ShopPage() {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <SkeletonProductCard key={i} />
                 ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {(filteredProducts.filter(p => {
                   const byFormat = formatSubsection === 'All' ? true : (p.format === formatSubsection);
                   const bySubsection = subsectionChip === 'All' ? true : (p.subsection === subsectionChip);

@@ -9,7 +9,7 @@ import {
   Clock,
 } from "lucide-react";
 import { projectId } from "../utils/supabase/info";
-import { AuthContext } from "../App";
+import { AuthContext } from '../context/AuthContext';
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";

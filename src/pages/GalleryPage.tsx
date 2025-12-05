@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { X } from "lucide-react";
 import { projectId, publicAnonKey } from "../utils/supabase/info";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { AuthContext } from "../context/AuthContext";
+import { toast } from "sonner";
 
 export default function GalleryPage() {
+  const { user, accessToken } = useContext(AuthContext);
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [filter, setFilter] = useState("All");
@@ -165,6 +168,12 @@ export default function GalleryPage() {
                         <h3 className="font-rashi font-semibold text-lg text-gray-800">
                           {item.title}
                         </h3>
+                        {item.productId && (
+                          <div className="mt-2 flex gap-2">
+                            <button onClick={(e)=>{ e.stopPropagation(); addToCart(item.productId); }} className="px-3 py-1 rounded border border-gray-300 text-gray-800">Add to Cart</button>
+                            <a href={`/product/${item.productId}`} onClick={(e)=>e.stopPropagation()} className="px-3 py-1 rounded premium-btn-white">View Product</a>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -258,6 +267,12 @@ export default function GalleryPage() {
             <p className="text-center text-gray-600 mt-2 max-w-2xl mx-auto">
               {selectedImage.description}
             </p>
+            {selectedImage.productId && (
+              <div className="mt-4 flex justify-center gap-3">
+                <button onClick={()=>addToCart(selectedImage.productId)} className="px-4 py-2 rounded-lg text-white" style={{ backgroundColor: '#14b8a6' }}>Add to Cart</button>
+                <a href={`/product/${selectedImage.productId}`} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-800">View Product</a>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -266,3 +281,14 @@ export default function GalleryPage() {
     </div>
   );
 }
+  const addToCart = async (productId: string) => {
+    try {
+      if (!user) return toast.error('Login to add to cart');
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/cart`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ productId, quantity: 1 })
+      });
+      const d = await res.json();
+      if (!res.ok) return toast.error(d.error || 'Failed');
+      toast.success('Added to cart');
+    } catch { toast.error('Failed'); }
+  };

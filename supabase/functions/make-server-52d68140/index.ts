@@ -1263,7 +1263,7 @@ app.post("/make-server-52d68140/gallery/upload", async (c) => {
       return c.json({ error: "Invalid JSON body" }, 400);
     }
 
-    const { image, fileName, title, description, category, year, mimeType } = body;
+    const { image, fileName, title, description, category, year, mimeType, productId } = body;
 
     if (!image || !fileName)
       return c.json({ error: "Image and fileName are required" }, 400);
@@ -1310,6 +1310,7 @@ app.post("/make-server-52d68140/gallery/upload", async (c) => {
       year,
       image: urlData.publicUrl,
       filePath,
+      productId: productId || null,
       createdAt: new Date().toISOString(),
     };
 
@@ -1319,6 +1320,62 @@ app.post("/make-server-52d68140/gallery/upload", async (c) => {
   } catch (e) {
     console.log("Storage upload error:", e);
     return c.json({ error: "Upload failed" }, 500);
+  }
+});
+
+// Update gallery item (metadata and optional image replace)
+app.put('/make-server-52d68140/gallery/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+
+    const id = c.req.param('id');
+    const existing = await kv.get(`gallery:${id}`);
+    if (!existing) return c.json({ error: 'Gallery item not found' }, 404);
+
+    const raw = await c.req.text();
+    let body: any = {};
+    try { body = JSON.parse(raw || '{}'); } catch { return c.json({ error: 'Invalid JSON body' }, 400); }
+
+    const { title, description, category, year, productId, image, fileName, mimeType } = body || {};
+    let updatedImage = existing.image;
+    let updatedFilePath = existing.filePath;
+
+    if (image && fileName) {
+      const parsedMime = mimeType || image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
+      const base64 = image.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const newPath = `gallery/${Date.now()}-${fileName}`;
+      const { error: upErr } = await supabase.storage.from('make-52d68140-gallery').upload(newPath, buffer, { contentType: parsedMime, upsert: false });
+      if (upErr) return c.json({ error: upErr.message || 'Upload failed' }, 400);
+      const { data: urlData } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(newPath);
+      updatedImage = urlData.publicUrl;
+      // remove old file if present
+      if (existing.filePath) {
+        await supabase.storage.from('make-52d68140-gallery').remove([existing.filePath]);
+      }
+      updatedFilePath = newPath;
+    }
+
+    const updated = {
+      ...existing,
+      title: title ?? existing.title,
+      description: (description ?? existing.description) || '',
+      category: category ?? existing.category,
+      year: year ?? existing.year,
+      productId: (productId ?? existing.productId) || null,
+      image: updatedImage,
+      filePath: updatedFilePath,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await kv.set(`gallery:${id}`, updated);
+    return c.json({ success: true, galleryItem: updated });
+  } catch (e) {
+    console.log('Gallery update error', e);
+    return c.json({ error: 'Failed to update gallery item' }, 500);
   }
 });
 
@@ -1535,6 +1592,37 @@ app.delete('/make-server-52d68140/faqs/:id', async (c) => {
 });
 
 // Videos: Public GET, Admin CRUD
+function normalizeVideoUrl(url: string): string {
+  try {
+    if (!url) return url;
+    const u = String(url);
+    if (/youtube\.com|youtu\.be/.test(u)) {
+      return u.includes('watch?v=') ? u.replace('watch?v=', 'embed/') : u;
+    }
+    if (/drive\.google\.com/.test(u)) {
+      const fileMatch = u.match(/\/file\/d\/([^/]+)/);
+      const idParam = u.match(/[?&]id=([^&]+)/);
+      const id = (fileMatch && fileMatch[1]) || (idParam && idParam[1]);
+      return id ? `https://drive.google.com/file/d/${id}/preview` : u;
+    }
+    return u;
+  } catch {
+    return url;
+  }
+}
+
+function getDriveThumbnail(url: string): string | null {
+  try {
+    const u = String(url);
+    if (!/drive\.google\.com/.test(u)) return null;
+    const fileMatch = u.match(/\/file\/d\/([^/]+)/);
+    const idParam = u.match(/[?&]id=([^&]+)/);
+    const id = (fileMatch && fileMatch[1]) || (idParam && idParam[1]);
+    return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w640` : null;
+  } catch {
+    return null;
+  }
+}
 app.get('/make-server-52d68140/videos', async (c) => {
   try {
     const items = await kv.getByPrefix('video:');
@@ -1558,17 +1646,18 @@ app.post('/make-server-52d68140/videos', async (c) => {
     const profile = await kv.get(`user:${user.id}`);
     if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
     const body = await c.req.json();
-    const { title, url, caption, thumbnail, tags, order } = body || {};
+    const { title, url, caption, thumbnail, tags, order, productId } = body || {};
     if (!title || !url) return c.json({ error: 'Title and url required' }, 400);
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const video = {
       id,
       title,
-      url,
+      url: normalizeVideoUrl(url),
       caption: caption || '',
-      thumbnail: thumbnail || '',
+      thumbnail: thumbnail || getDriveThumbnail(url) || '',
       tags: Array.isArray(tags) ? tags : [],
       order: Number(order) || 0,
+      productId: productId || null,
       createdAt: new Date().toISOString(),
     };
     await kv.set(`video:${id}`, video);
@@ -1589,12 +1678,78 @@ app.put('/make-server-52d68140/videos/:id', async (c) => {
     const existing = await kv.get(`video:${id}`);
     if (!existing) return c.json({ error: 'Video not found' }, 404);
     const updates = await c.req.json();
-    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString(), order: Number(updates.order ?? existing.order) };
+    const merged = { ...updates };
+    if (merged.url) merged.url = normalizeVideoUrl(merged.url);
+    if (!merged.thumbnail && merged.url) {
+      const autoThumb = getDriveThumbnail(merged.url);
+      if (autoThumb) merged.thumbnail = autoThumb;
+    }
+    const updated = { ...existing, ...merged, updatedAt: new Date().toISOString(), order: Number(merged.order ?? existing.order) };
     await kv.set(`video:${id}`, updated);
     return c.json({ success: true, video: updated });
   } catch (e) {
     console.log('Video update error', e);
     return c.json({ error: 'Failed to update video' }, 500);
+  }
+});
+
+app.post('/make-server-52d68140/videos/:id/like', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const id = c.req.param('id');
+    const key = `video-like:${id}:${user.id}`;
+    const exists = await kv.get(key);
+    if (exists) {
+      await kv.del(key);
+    } else {
+      await kv.set(key, { id, userId: user.id, createdAt: new Date().toISOString() });
+    }
+    const likes = await kv.getByPrefix(`video-like:${id}:`);
+    return c.json({ success: true, liked: !exists, count: (likes || []).length });
+  } catch (e) {
+    console.log('Video like error', e);
+    return c.json({ error: 'Failed to like video' }, 500);
+  }
+});
+
+app.get('/make-server-52d68140/videos/:id/likes', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const likes = await kv.getByPrefix(`video-like:${id}:`);
+    return c.json({ count: (likes || []).length });
+  } catch (e) {
+    return c.json({ count: 0 });
+  }
+});
+
+app.get('/make-server-52d68140/videos/:id/comments', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const list = await kv.getByPrefix(`video-comment:${id}:`);
+    const sorted = (list || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return c.json({ comments: sorted });
+  } catch (e) {
+    return c.json({ comments: [] });
+  }
+});
+
+app.post('/make-server-52d68140/videos/:id/comments', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const id = c.req.param('id');
+    const body = await c.req.json();
+    const text = String(body?.text || '').trim();
+    if (!text) return c.json({ error: 'Comment text required' }, 400);
+    const commentId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const profile = await kv.get(`user:${user.id}`);
+    const comment = { id: commentId, videoId: id, userId: user.id, userName: profile?.name || 'User', text, createdAt: new Date().toISOString() };
+    await kv.set(`video-comment:${id}:${commentId}`, comment);
+    return c.json({ success: true, comment });
+  } catch (e) {
+    console.log('Video comment error', e);
+    return c.json({ error: 'Failed to add comment' }, 500);
   }
 });
 
@@ -1774,5 +1929,39 @@ app.put('/make-server-52d68140/payments/:id', async (c) => {
   } catch (error) {
     console.log('Update payment error:', error);
     return c.json({ error: 'Failed to update payment' }, 500);
+  }
+});
+// Admin cleanup: wipe KV data (excluding users by default)
+app.post('/make-server-52d68140/admin/cleanup', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+
+    const body = await c.req.json().catch(() => ({}));
+    const includeUsers = !!body?.includeUsers;
+
+    const prefixes = [
+      'product:', 'order:', 'cart:', 'wishlist:',
+      'testimonial:', 'gallery:', 'faq:', 'contact:',
+      'video:', 'video-like:', 'video-comment:',
+      'notification:', 'payment:', 'reset:', 'reset-email:'
+    ];
+    if (includeUsers) prefixes.push('user:');
+
+    const result: Record<string, number> = {};
+    for (const p of prefixes) {
+      // obtain real keys from KV table
+      const pairs = await (kv as any).getKeysByPrefix(p);
+      let count = 0;
+      for (const pair of pairs) { await kv.del(pair.key); count++; }
+      result[p] = count;
+    }
+
+    return c.json({ success: true, deleted: result, note: includeUsers ? 'Users cleared too' : 'Users retained' });
+  } catch (e) {
+    console.log('Admin cleanup error', e);
+    return c.json({ error: 'Cleanup failed' }, 500);
   }
 });

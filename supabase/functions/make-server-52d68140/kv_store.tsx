@@ -85,3 +85,15 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
   }
   return data?.map((d) => d.value) ?? [];
 };
+
+export const getKeysByPrefix = async (prefix: string): Promise<{ key: string; value: any }[]> => {
+  const supabase = client();
+  const { data, error } = await supabase
+    .from("kv_store_52d68140")
+    .select("key, value")
+    .like("key", prefix + "%");
+  if (error) {
+    throw new Error(error.message);
+  }
+  return (data || []).map((d) => ({ key: d.key as string, value: d.value }));
+};

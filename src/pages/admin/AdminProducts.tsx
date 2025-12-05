@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
-import { Plus, Edit, Trash2, X } from "lucide-react";
-import { AuthContext } from "../../App";
+import { Plus, Edit, Trash2, X, Copy } from "lucide-react";
+import { AuthContext } from "../../context/AuthContext";
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { toast } from "sonner";
 import AdminSidebar from "./AdminSidebar";
@@ -291,6 +291,7 @@ export default function AdminProducts() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-gray-900">ID</th>
                   <th className="px-6 py-3 text-left text-gray-900">Image</th>
                   <th className="px-6 py-3 text-left text-gray-900">Name</th>
                   <th className="px-6 py-3 text-left text-gray-900">Category</th>
@@ -305,6 +306,18 @@ export default function AdminProducts() {
               <tbody className="divide-y divide-gray-200">
                 {products.map((product) => (
                   <tr key={product.id}>
+                    <td className="px-6 py-4 text-xs text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate max-w-[180px] inline-block align-middle">{product.id}</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(product.id); toast.success("Copied"); }}
+                          className="p-1 rounded border hover:bg-gray-100"
+                          title="Copy ID"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <img
                         src={product.image}

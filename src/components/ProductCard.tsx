@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Eye } from 'lucide-react';
 import { wishlistEvents } from '../utils/wishlistEvents';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { AuthContext } from '../App';
+import { AuthContext } from '../context/AuthContext';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner';
 

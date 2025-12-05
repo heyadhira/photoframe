@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, Search, Menu, X, Heart } from 'lucide-react';
 import { wishlistEvents } from '../utils/wishlistEvents';
-import { AuthContext } from '../App';
+import { AuthContext } from '../context/AuthContext';
 import { cartEvents } from '../utils/cartEvents';
 import logo from "../assets/logo-r.png";
 

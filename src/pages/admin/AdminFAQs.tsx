@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import AdminSidebar from './AdminSidebar';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../context/AuthContext';
 import { projectId } from '../../utils/supabase/info';
 import { toast } from 'sonner';
 
@@ -112,4 +112,3 @@ export default function AdminFAQs() {
     </div>
   );
 }
-

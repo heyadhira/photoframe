@@ -64,6 +64,7 @@ export default function HomePage() {
   const [viewportW, setViewportW] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [faqs, setFaqs] = useState<any[]>([]);
   const [faqsLoading, setFaqsLoading] = useState(true);
+  const [testApi, setTestApi] = useState<CarouselApi | null>(null);
   const computeTags = () => {
     const words = new Set<string>();
     featuredProducts.forEach((p:any) => {
@@ -126,6 +127,14 @@ export default function HomePage() {
   useEffect(() => {
     fetchFaqs();
   }, []);
+
+  useEffect(() => {
+    if (!testApi) return;
+    const id = setInterval(() => {
+      try { testApi.scrollNext(); } catch {}
+    }, 2500);
+    return () => clearInterval(id);
+  }, [testApi]);
 
   const fetchFaqs = async () => {
     try {
@@ -457,7 +466,7 @@ const scrollBestSellerRight = () => {
           className="curve-card curve-reflection fade-up"
           style={{
             background: "white",
-            borderRadius: "28px",
+            borderRadius: "50px",
             padding: "22px",
             minHeight: "30px",
             display: "flex",
@@ -471,15 +480,15 @@ const scrollBestSellerRight = () => {
 
           {/* Circular Icon */}
           <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center mb-3"
+            className="w-20 h-20 rounded-full flex items-center justify-center mb-3"
             style={{
-              backgroundColor: "#ffffff",
+              backgroundColor: "#14b8a6",
               boxShadow: "inset 0 2px 6px rgba(0,0,0,.06), 0 6px 12px rgba(0,0,0,.08)",
             }}
           >
             {(() => {
               const Icon = (item as any).icon;
-              return <Icon className="w-10 h-10" color="#14b8a6" />;
+              return <Icon className="w-10 h-10" color="#ffffff" />;
             })()}
           </div>
 
@@ -623,35 +632,33 @@ const scrollBestSellerRight = () => {
               <p className="text-gray-600">Real transformations from discerning homeowners who trust Decorizz</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
-              {testimonials.map((t) => (
-                <div 
-                  key={t.id} 
-                  className="p-6 rounded-lg transition" 
-                  style={{ backgroundColor: '#6ac8bdff' }} 
-                  onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)'} 
-                  onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'} 
-                > 
-                  <div className="flex items-start mb-4"> 
-                    
-                    <img src={t.profileImage || ''} alt={t.name} className="w-12 h-12 rounded-full object-cover mr-3 bg-gray-100 flex-shrink-0" />
-                    <div className="flex-1"> 
-                      <p className="text-black text-base" style={{ fontWeight: 700 }}>{t.name}</p> 
-                      <div className="flex mt-1"> 
-                        {Array.from({ length: t.rating }).map((_, i) => ( 
-                          <Star 
-                            key={i} 
-                            className="w-4 h-4" 
-                            style={{ fill: '#facc15', color: '#facc15' }} 
-                          /> 
-                        ))} 
-                      </div> 
-                    </div> 
-                  </div> 
-                  <p className="text-gray-800 leading-relaxed">{t.text}</p> 
-                </div> 
-              ))} 
-            </div> 
+            <div className="mb-12">
+              <Carousel opts={{ loop: true, align: "center", slidesToScroll: 1 }} setApi={setTestApi} className="w-full overflow-hidden testimonial-carousel">
+                <CarouselContent className="ml-0 gap-6">
+                  {testimonials.map((t) => (
+                    <CarouselItem className="pl-0 flex-none w-1/3">
+
+                      <div className="soft-card p-6 rounded-2xl bg-white border hover:shadow-lg transition mx-2" data-aos="fade-up">
+                        <div className="flex items-start mb-4">
+                          <img src={t.profileImage || ''} alt={t.name} className="w-12 h-12 rounded-full object-cover mr-3 bg-gray-100 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-gray-900 text-base font-semibold">{t.name}</p>
+                            <div className="flex mt-1">
+                              {Array.from({ length: t.rating }).map((_, i) => (
+                                <Star key={i} className="w-4 h-4 text-yellow-400" style={{ fill: '#facc15' }} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed">{(t.text || '').length > 160 ? (t.text || '').slice(0, 160).replace(/\s+\S*$/, '') + '…' : (t.text || '')}</p>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden lg:flex" />
+                <CarouselNext className="hidden lg:flex" />
+              </Carousel>
+            </div>
 
             <div className="text-center"> 
               <Link 
@@ -686,23 +693,25 @@ const scrollBestSellerRight = () => {
     </div>
   </section>
 ) : faqs.length > 0 && (
-  <section className="max-w-7xl mx-auto px-4 py-16">
-    <div className="text-center mb-8">
-      <h2 className="section-title"><span className="text-[#3b2f27]">Frequently</span> <span style={{ color: '#14b8a6' }}>Asked Questions</span></h2>
-      <p className="text-gray-600 mt-2">Answers to common questions about our frames and services.</p>
-    </div>
-    <div className="space-y-4">
-      {faqs.map((f, i) => (
-        <details key={f.id} className="rounded-xl border bg-white shadow-sm overflow-hidden">
-          <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
-            <span className="font-semibold text-gray-900">{f.question}</span>
-            <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg>
-          </summary>
-          <div className="px-4 pb-4 text-gray-700">
-            {f.answer}
-          </div>
-        </details>
-      ))}
+  <section className="faq-dark">
+    <div className="max-w-7xl mx-auto px-4 py-16">
+      <h2 className="faq-title">FAQs</h2>
+      <div className="faq-list">
+        {faqs.map((f) => (
+          <details key={f.id} className="faq-item group">
+            <summary className="faq-summary">
+              <span className="faq-icon">
+                <span className="plus group-open:hidden">+</span>
+                <span className="minus hidden group-open:inline">−</span>
+              </span>
+              <span className="faq-question">{String(f.question).toUpperCase()}</span>
+            </summary>
+            <div className="faq-answer">
+              {f.answer}
+            </div>
+          </details>
+        ))}
+      </div>
     </div>
   </section>
 )}

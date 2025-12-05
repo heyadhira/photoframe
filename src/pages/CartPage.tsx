@@ -4,9 +4,9 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Trash2, Minus, Plus } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { AuthContext } from '../App';
+import { AuthContext } from '../context/AuthContext';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { cartEvents } from '../utils/cartEvents';
 
 export default function CartPage() {

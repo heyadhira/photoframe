@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AuthContext } from "../../App";
+import { AuthContext } from "../../context/AuthContext";
 
 import {
   LayoutDashboard,

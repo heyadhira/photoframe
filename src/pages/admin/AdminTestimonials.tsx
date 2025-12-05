@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Plus, Trash2, Star } from "lucide-react";
-import { AuthContext } from "../../App";
+import { AuthContext } from '../../context/AuthContext';
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 import { toast } from "sonner";
 import AdminSidebar from "./AdminSidebar";

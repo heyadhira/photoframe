@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
-import { AuthContext } from "../../App";
+import { AuthContext } from '../../context/AuthContext';
 import { projectId, publicAnonKey } from "../../utils/supabase/info";
 
-import { Plus, Trash2, Upload, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Trash2, Upload, Image as ImageIcon, X, Edit } from "lucide-react";
 
 import { toast } from "sonner";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
@@ -26,12 +26,15 @@ export default function AdminGallery() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "Events",
     year: new Date().getFullYear(),
+    productId: "",
   });
 
   const categories = ["Events", "Studio", "Outdoor", "Portrait"];
@@ -137,6 +140,7 @@ export default function AdminGallery() {
       description: "",
       category: "Events",
       year: new Date().getFullYear(),
+      productId: "",
     });
     setSelectedFile(null);
     setPreviewUrl("");
@@ -217,18 +221,30 @@ export default function AdminGallery() {
                       {item.description}
                     </p>
 
-                    <div className="flex justify-between text-gray-500 text-sm mb-3">
+                    <div className="flex justify-between text-gray-500 text-sm mb-2">
                       <span>{item.category}</span>
                       <span>{item.year}</span>
                     </div>
+                    {item.productId && (
+                      <div className="text-xs text-gray-600 mb-3">Product ID: <span className="font-mono">{item.productId}</span></div>
+                    )}
 
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="w-full py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 flex items-center justify-center gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="w-full py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center justify-center gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="w-full py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 flex items-center justify-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -237,8 +253,8 @@ export default function AdminGallery() {
         </div>
       </div>
 
-      {/* Modal */}
-      {showAddModal && (
+  {/* Modal */}
+  {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden animate-fadeIn">
             <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
@@ -280,8 +296,85 @@ export default function AdminGallery() {
                     >
                       <X className="w-4 h-4" />
                     </button>
+      </div>
+    )}
+
+    {/* Edit Modal */}
+    {showEditModal && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden animate-fadeIn">
+          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+            <div>
+              <h2 className="text-2xl font-bold">Edit Photo</h2>
+              <p className="text-sm text-gray-600 mt-1">Update gallery item details</p>
+            </div>
+            <button type="button" onClick={() => setShowEditModal(false)} className="hover:bg-white/50 p-2 rounded-full transition-all hover:rotate-90 duration-300">
+              <X className="w-6 h-6 text-gray-700" />
+            </button>
+          </div>
+          <div className="p-6 pr-2 max-h-[calc(90vh-200px)] overflow-y-scroll custom-scrollbar">
+            <form onSubmit={handleUpdate} className="space-y-6">
+              {/* File Upload */}
+              <div>
+                <label className="block font-medium text-gray-700 mb-2">Replace Photo (optional)</label>
+                {previewUrl && (
+                  <div className="mb-4 relative">
+                    <img src={previewUrl} alt="Preview" className="w-full h-64 object-cover rounded-lg border-2 border-gray-200" />
+                    <button type="button" onClick={() => { setPreviewUrl(""); setSelectedFile(null); }} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600">
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div className="flex flex-col items-center justify-center pb-4">
+                      <Upload className="w-12 h-12 mb-3 text-gray-400" />
+                      <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                      <p className="text-xs text-gray-500">PNG, JPG, WEBP (MAX. 10MB)</p>
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileSelect} />
+                  </label>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="mb-4">
+                <label className="block font-medium text-gray-700 mb-1">Title *</label>
+                <input type="text" className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              </div>
+              {/* Description */}
+              <div className="mb-4">
+                <label className="block font-medium text-gray-700 mb-1">Description</label>
+                <textarea className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input" rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+              </div>
+              {/* Category */}
+              <div className="mb-4">
+                <label className="block font-medium text-gray-700 mb-1">Category *</label>
+                <select value={formData.category} className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input" onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
+                  {categories.map((c) => (<option key={c}>{c}</option>))}
+                </select>
+              </div>
+              {/* Year */}
+              <div className="mb-4">
+                <label className="block font-medium text-gray-700 mb-1">Year *</label>
+                <input type="number" className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input" value={formData.year} onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })} min={2000} max={2099} />
+              </div>
+              {/* Product ID */}
+              <div className="mb-4">
+                <label className="block font-medium text-gray-700 mb-1">Related Product ID (optional)</label>
+                <input type="text" className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input" value={formData.productId} onChange={(e) => setFormData({ ...formData, productId: e.target.value })} />
+              </div>
+              <div className="flex gap-4 pt-6 border-t mt-6">
+                <button type="submit" disabled={uploading} className="flex-1 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2">
+                  {uploading ? (<><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Updating...</>) : (<>Update Photo</>)}
+                </button>
+                <button type="button" onClick={() => { setShowEditModal(false); setEditingItem(null); }} className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all" disabled={uploading}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    )}
 
                 <div className="flex items-center justify-center w-full">
                   <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
@@ -327,6 +420,19 @@ export default function AdminGallery() {
                     setFormData({ ...formData, description: e.target.value })
                   }
                 />
+              </div>
+
+              {/* Related Product ID */}
+              <div className="mb-4">
+                <label className="block font-medium text-gray-700 mb-1">Related Product ID (optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1733429041"
+                  className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all form-input"
+                  value={formData.productId}
+                  onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                />
+                <p className="text-xs text-gray-500 mt-1">You can copy IDs from Admin → Products.</p>
               </div>
 
               {/* Category */}
@@ -402,3 +508,48 @@ export default function AdminGallery() {
     </div>
   );
 }
+  const openEdit = (item: any) => {
+    setEditingItem(item);
+    setShowEditModal(true);
+    setFormData({
+      title: item.title || "",
+      description: item.description || "",
+      category: item.category || "Events",
+      year: item.year || new Date().getFullYear(),
+      productId: item.productId || "",
+    });
+    setPreviewUrl(item.image || "");
+    setSelectedFile(null);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploading(true);
+    try {
+      let imageBase64: string | undefined = undefined;
+      let fileName: string | undefined = undefined;
+      let mimeType: string | undefined = undefined;
+      if (selectedFile) {
+        const r = new FileReader();
+        const p = new Promise<string>((res, rej) => { r.onload = () => res(r.result as string); r.onerror = rej; });
+        r.readAsDataURL(selectedFile);
+        imageBase64 = await p;
+        fileName = selectedFile.name;
+        mimeType = selectedFile.type;
+      }
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/gallery/${editingItem.id}`, {
+        method: 'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ ...formData, image: imageBase64, fileName, mimeType })
+      });
+      const d = await res.json();
+      if (!res.ok) return toast.error(d.error || 'Update failed');
+      toast.success('Updated');
+      setShowEditModal(false);
+      setEditingItem(null);
+      resetForm();
+      fetchGallery();
+    } catch (err: any) {
+      toast.error(err.message || 'Update failed');
+    } finally {
+      setUploading(false);
+    }
+  };

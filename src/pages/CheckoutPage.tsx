@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { CreditCard, Smartphone, Wallet } from 'lucide-react';
-import { AuthContext } from '../App';
+import { AuthContext } from '../context/AuthContext';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { RAZORPAY_CONFIG } from '../config/razorpay';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();

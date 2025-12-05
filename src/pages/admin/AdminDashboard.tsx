@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../../App";
+import { AuthContext } from '../../context/AuthContext';
 import { projectId } from "../../utils/supabase/info";
 
 import {
@@ -34,6 +34,8 @@ export default function AdminDashboard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanResult, setCleanResult] = useState<any>(null);
 
   useEffect(() => {
     fetchStats();
@@ -53,6 +55,23 @@ export default function AdminDashboard() {
       console.error("Stats fetch error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cleanupDb = async (includeUsers = false) => {
+    if (!confirm(includeUsers ? 'This will wipe ALL data including users. Continue?' : 'This will wipe content data (products, orders, videos, etc.). Continue?')) return;
+    setCleaning(true);
+    try {
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/admin/cleanup`, {
+        method: 'POST', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ includeUsers })
+      });
+      const d = await res.json();
+      setCleanResult(d);
+      fetchStats();
+    } catch (e) {
+      setCleanResult({ error: 'Request failed' });
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -182,6 +201,17 @@ export default function AdminDashboard() {
                     </p>
                   </Link>
                 ))}
+                <div className="p-6 rounded-xl border border-red-200 bg-red-50">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Database Cleanup</h3>
+                  <p className="text-sm text-gray-600 mb-4">Wipe KV data like products, orders, videos, FAQs, testimonials, payments, carts, wishlists, contacts, notifications. Users retained by default.</p>
+                  <div className="flex gap-3">
+                    <button onClick={()=>cleanupDb(false)} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" disabled={cleaning}>{cleaning ? 'Cleaning…' : 'Clean Content'}</button>
+                    <button onClick={()=>cleanupDb(true)} className="px-4 py-2 rounded-lg border border-red-600 text-red-700 hover:bg-red-100" disabled={cleaning}>Clean Including Users</button>
+                  </div>
+                  {cleanResult && (
+                    <pre className="mt-3 text-xs bg-white p-3 rounded border overflow-auto max-h-36">{JSON.stringify(cleanResult, null, 2)}</pre>
+                  )}
+                </div>
               </div>
             </div>
           </>

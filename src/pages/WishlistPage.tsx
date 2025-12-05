@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { AuthContext } from '../App';
+import { AuthContext } from '../context/AuthContext';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import SkeletonProductCard from '../components/SkeletonProductCard';
 import { Link } from 'react-router-dom';
@@ -61,4 +61,3 @@ export default function WishlistPage() {
     </div>
   );
 }
-

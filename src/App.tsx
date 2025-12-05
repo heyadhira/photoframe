@@ -42,40 +42,22 @@ import AdminVideos from './pages/admin/AdminVideos';
 import DecorByRoomPage from './pages/DecorByRoomPage';
 import ContactUsPage from './pages/ContactUsPage';
 import { WhatsappButton } from './components/WhatsappButton';
+import { AuthContext, AuthContextType, User } from './context/AuthContext';
 
 
 
 const supabase = createClient(
   `https://${projectId}.supabase.co`,
-  publicAnonKey
+  publicAnonKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: false,
+    },
+  }
 );
 
-export type User = {
-  id: string;
-  email: string;
-  name: string;
-  role: 'user' | 'admin';
-};
-
-export type AuthContextType = {
-  user: User | null;
-  accessToken: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-  googleLogin: () => Promise<void>;
-  isLoading: boolean;
-};
-
-export const AuthContext = React.createContext<AuthContextType>({
-  user: null,
-  accessToken: null,
-  login: async () => {},
-  signup: async () => {},
-  logout: async () => {},
-  googleLogin: async () => {},
-  isLoading: true,
-});
+// Auth context moved to ./context/AuthContext to keep this file exporting only components
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -83,7 +65,27 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkSession();
+    try { localStorage.removeItem(`sb-${projectId}-auth-token`); } catch {}
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) {
+        setAccessToken(session.access_token);
+        fetchUser(session.access_token);
+      } else {
+        setAccessToken(null);
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+    // also check current session once on mount
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (session?.access_token) {
+          setAccessToken(session.access_token);
+          fetchUser(session.access_token);
+        }
+      })
+      .finally(() => setIsLoading(false));
+    return () => { sub.subscription?.unsubscribe(); };
   }, []);
 
   const checkSession = async () => {

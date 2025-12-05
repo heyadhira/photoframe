@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../../App";
+import { AuthContext } from '../../context/AuthContext';
 import { projectId } from "../../utils/supabase/info";
 import { toast } from "sonner";
 import AdminSidebar from "./AdminSidebar";

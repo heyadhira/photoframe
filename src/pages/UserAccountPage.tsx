@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { User, Package, Heart } from 'lucide-react';
-import { AuthContext } from '../App';
+import { AuthContext } from '../context/AuthContext';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 export default function UserAccountPage() {

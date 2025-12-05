@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import AdminSidebar from './AdminSidebar';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../context/AuthContext';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -8,13 +8,14 @@ import { toast } from 'sonner';
 type VideoItem = { id: string; title: string; url: string; caption?: string; thumbnail?: string; order?: number };
 
 export default function AdminVideos() {
-  const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
+  const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { accessToken } = useContext(AuthContext);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [items, setItems] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<VideoItem>({ id: '', title: '', url: '', caption: '', thumbnail: '', order: 0 });
+  const [productId, setProductId] = useState('');
   const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -40,6 +41,19 @@ export default function AdminVideos() {
   useEffect(() => { fetchVideos(); }, []);
 
   const toBase64 = (file: File) => new Promise<string>((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsDataURL(file); });
+  const isYouTube = (url: string) => /youtube\.com|youtu\.be/.test(url);
+  const isGoogleDrive = (url: string) => /drive\.google\.com/.test(url);
+  const normalizeUrl = (url: string) => {
+    if (!url) return url;
+    if (isYouTube(url)) return url.includes('watch?v=') ? url.replace('watch?v=', 'embed/') : url;
+    if (isGoogleDrive(url)) {
+      const fileMatch = url.match(/\/file\/d\/([^/]+)/);
+      const idParam = url.match(/[?&]id=([^&]+)/);
+      const id = fileMatch?.[1] || idParam?.[1];
+      return id ? `https://drive.google.com/file/d/${id}/preview` : url;
+    }
+    return url;
+  };
 
   const createVideo = async () => {
     try {
@@ -65,19 +79,42 @@ export default function AdminVideos() {
           .upload(path, videoFile, { contentType: videoFile.type, upsert: false });
         if (vErr) {
           setUploading(false);
-          return toast.error(vErr.message || 'Video upload failed');
+          const msg = (vErr.message || 'Video upload failed');
+          return toast.error(`${msg}. For larger files, upload to Google Drive and paste the file link.`);
         }
         const { data } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(path);
         videoUrl = data.publicUrl;
         setUploading(false);
       }
+      if (!videoUrl && form.url) {
+        // Validate Google Drive links: must be a file link (contains /file/d/<id> or ?id=)
+        if (isGoogleDrive(form.url)) {
+          const fileMatch = form.url.match(/\/file\/d\/([^/]+)/);
+          const idParam = form.url.match(/[?&]id=([^&]+)/);
+          const id = fileMatch?.[1] || idParam?.[1];
+          if (!id) {
+            return toast.error('Paste a Google Drive FILE link (Open the file → Copy link), not a folder link');
+          }
+        }
+        videoUrl = normalizeUrl(form.url);
+      }
+      if (!videoUrl) {
+        return toast.error('Please upload a video file or paste a valid video URL');
+      }
+      let thumbFinal = thumbUrl;
+      if (!thumbFinal && form.url) {
+        const fileMatch = form.url.match(/\/file\/d\/([^/]+)/);
+        const idParam = form.url.match(/[?&]id=([^&]+)/);
+        const id = fileMatch?.[1] || idParam?.[1];
+        if (id) thumbFinal = `https://drive.google.com/thumbnail?id=${id}&sz=w640`;
+      }
       const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/videos`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ ...form, url: videoUrl, thumbnail: thumbUrl })
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ ...form, url: videoUrl, thumbnail: thumbFinal, productId })
       });
       const d = await res.json();
       if (!res.ok) return toast.error(d.error || 'Create failed');
       toast.success('Video added');
-      setForm({ id:'', title:'', url:'', caption:'', thumbnail:'', order: 0 }); setThumbFile(null); setThumbPreview(''); setVideoFile(null); setVideoPreview('');
+      setForm({ id:'', title:'', url:'', caption:'', thumbnail:'', order: 0 }); setThumbFile(null); setThumbPreview(''); setVideoFile(null); setVideoPreview(''); setProductId('');
       fetchVideos();
     } catch { toast.error('Create failed'); }
   };
@@ -113,6 +150,10 @@ export default function AdminVideos() {
         {/* Create */}
         <div className="soft-card rounded-2xl p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Add Video</h2>
+          <div className="mb-3">
+            <a href="https://drive.google.com/drive/folders/1H6JXi-VX7-uIIX1rplfbO0ffyZuo3Aub?usp=sharing" target="_blank" rel="noopener noreferrer" className="premium-btn-white">Open Google Drive Folder</a>
+            <span className="ml-3 text-sm text-gray-600">Paste file link below if you upload to Drive.</span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="Title" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <div>
@@ -125,9 +166,12 @@ export default function AdminVideos() {
                   <span className="text-sm">Uploading video…</span>
                 </div>
               )}
+              <p className="text-xs text-gray-500 mt-1">Max 10MB. For larger videos, upload to Google Drive and paste the link below.</p>
             </div>
+            <input value={form.url} onChange={e=>setForm({...form, url:e.target.value})} placeholder="Or paste Video URL (YouTube / Google Drive / MP4)" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <input value={form.caption} onChange={e=>setForm({...form, caption:e.target.value})} placeholder="Caption (optional)" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <input type="number" value={form.order || 0} onChange={e=>setForm({...form, order: Number(e.target.value)})} placeholder="Order" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
+            <input value={productId} onChange={e=>setProductId(e.target.value)} placeholder="Related Product ID (optional)" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <div>
               <label className="text-sm text-gray-600">Thumbnail</label>
               <input type="file" accept="image/*" onChange={(e)=>{ const f=e.target.files?.[0]||null; setThumbFile(f); setThumbPreview(f?URL.createObjectURL(f):''); }} className="w-full" />
@@ -153,7 +197,8 @@ export default function AdminVideos() {
                     <input type="file" accept="image/*" onChange={async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const base64=await toBase64(f); const up=await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/videos/thumbnail/upload`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${accessToken}` }, body: JSON.stringify({ image: base64, fileName: f.name })}); const ud=await up.json(); if(!up.ok) return toast.error(ud.error||'Upload failed'); await updateVideo(v.id, { thumbnail: ud.url }); }} className="mt-2 text-sm" />
                   </div>
                   <input defaultValue={v.title} onBlur={(e)=>updateVideo(v.id, { title: e.target.value })} className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
-                  <input defaultValue={v.url} onBlur={(e)=>updateVideo(v.id, { url: e.target.value })} className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
+                  <input defaultValue={v.url} onBlur={(e)=>updateVideo(v.id, { url: normalizeUrl(e.target.value) })} className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
+                  <input defaultValue={String((v as any).productId||'')} onBlur={(e)=>updateVideo(v.id, { productId: e.target.value })} className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
                   <input type="number" defaultValue={v.order || 0} onBlur={(e)=>updateVideo(v.id, { order: Number(e.target.value) })} className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
                 </div>
                 <textarea defaultValue={v.caption || ''} onBlur={(e)=>updateVideo(v.id, { caption: e.target.value })} className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white" />
