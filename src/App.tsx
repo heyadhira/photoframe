@@ -32,6 +32,13 @@ import AdminGallery from './pages/admin/AdminGallery';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminDelivery from './pages/admin/AdminDelivery';
 import AdminContacts from './pages/admin/AdminContacts';
+import AdminFAQs from './pages/admin/AdminFAQs';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import RefundsPage from './pages/RefundsPage';
+import WishlistPage from './pages/WishlistPage';
+import ShopByVideosPage from './pages/ShopByVideosPage';
+import AdminVideos from './pages/admin/AdminVideos';
 import DecorByRoomPage from './pages/DecorByRoomPage';
 import ContactUsPage from './pages/ContactUsPage';
 import { WhatsappButton } from './components/WhatsappButton';
@@ -56,6 +63,7 @@ export type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  googleLogin: () => Promise<void>;
   isLoading: boolean;
 };
 
@@ -65,6 +73,7 @@ export const AuthContext = React.createContext<AuthContextType>({
   login: async () => {},
   signup: async () => {},
   logout: async () => {},
+  googleLogin: async () => {},
   isLoading: true,
 });
 
@@ -155,12 +164,27 @@ function App() {
     setAccessToken(null);
   };
 
+  const googleLogin = async () => {
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/login',
+        },
+      });
+    } catch (e: any) {
+      console.error('Google auth error:', e);
+      alert('Google sign-in is not enabled. Enable Google in Supabase Auth → Providers and add redirect URL.');
+    }
+  };
+
   const authValue: AuthContextType = {
     user,
     accessToken,
     login,
     signup,
     logout,
+    googleLogin,
     isLoading,
   };
 
@@ -180,10 +204,19 @@ function App() {
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          {/* Protect checkout: redirect unauthenticated users to login with a return path */}
+          <Route
+            path="/checkout"
+            element={user ? <CheckoutPage /> : <Navigate to="/login" state={{ redirect: '/checkout' }} replace />}
+          />
           <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
           <Route path="/account" element={<UserAccountPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/refunds" element={<RefundsPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/shop-by-videos" element={<ShopByVideosPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/testimonials" element={<TestimonialsPage />} />
           <Route path="/search" element={<SearchPage />} />
@@ -232,6 +265,14 @@ function App() {
           <Route
             path="/admin/contacts"
             element={user?.role === 'admin' ? <AdminContacts /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/faqs"
+            element={user?.role === 'admin' ? <AdminFAQs /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/videos"
+            element={user?.role === 'admin' ? <AdminVideos /> : <Navigate to="/login" />}
           />
         </Routes>
         <WhatsappButton />

@@ -4,13 +4,14 @@ import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { User, Package, Heart } from 'lucide-react';
 import { AuthContext } from '../App';
-import { projectId } from '../utils/supabase/info';
+import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 export default function UserAccountPage() {
   const { user, accessToken } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [wishlistProducts, setWishlistProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +41,21 @@ export default function UserAccountPage() {
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const data = await res.json();
-      setWishlist(data.wishlist?.items || []);
+      const ids: string[] = data.wishlist?.items || [];
+      setWishlist(ids);
+      const details = await Promise.all(ids.map(async (id) => {
+        try {
+          const r = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/products/${id}`,
+            { headers: { Authorization: `Bearer ${publicAnonKey}` } }
+          );
+          const d = await r.json();
+          return d.product ? d.product : null;
+        } catch {
+          return null;
+        }
+      }));
+      setWishlistProducts(details.filter(Boolean));
     } catch (err) {
       console.error(err);
     }
@@ -55,7 +70,7 @@ export default function UserAccountPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-bg-soft">
+    <div className="min-h-screen about-theme content-offset">
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -170,12 +185,19 @@ export default function UserAccountPage() {
               <div className="card-soft rounded-2xl p-8">
                 <h2 className="section-title mb-6">Wishlist</h2>
 
-                {wishlist.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {wishlist.map((productId) => (
-                      <div key={productId} className="card-soft rounded-xl p-5">
-                        <p className="text-gray-600">Product ID: {productId}</p>
-                      </div>
+                {wishlistProducts.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {wishlistProducts.map((p) => (
+                      <a key={p.id} href={`/product/${p.id}`} className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition overflow-hidden">
+                        <div className="aspect-square bg-gray-100 overflow-hidden">
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+                        <div className="p-4">
+                          <p className="text-sm text-gray-500 mb-1">{p.category || 'Frame'}</p>
+                          <h3 className="text-gray-900 mb-1">{p.name}</h3>
+                          <p className="text-gray-900 font-semibold">₹ {Number(p.price).toFixed(2)}</p>
+                        </div>
+                      </a>
                     ))}
                   </div>
                 ) : (

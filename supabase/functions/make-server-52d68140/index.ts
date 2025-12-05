@@ -526,12 +526,17 @@ app.post('/make-server-52d68140/wishlist', async (c) => {
 
 
 // Email notification function
-async function sendOrderEmail(orderData: any, userEmail: string) {
+const APP_URL = Deno.env.get('https://photoframe-eight.vercel.app/') ?? 'http://localhost:3001';
+async function sendOrderEmail(orderData: any, userEmail: string, userName?: string) {
   try {
+    const payStatus = (orderData.paymentStatus || 'pending').toLowerCase();
+    const payColor = payStatus === 'completed' ? '#10b981' : payStatus === 'failed' ? '#ef4444' : '#f59e0b';
+    const shippingName = orderData.shippingAddress?.fullName || orderData.shippingAddress?.name || userName || 'Customer';
+
     const emailContent = {
-      from: 'Decorizz Orders <onboarding@resend.dev>',
-      to: 'adhirasudhir@gmail.com', // Send to admin email
-      reply_to: userEmail, // Customer can reply directly
+      from: 'Decorizz <info@decorizz.com>',
+      to: userEmail,
+      reply_to: 'info@decorizz.com',
       subject: `🎉 New Order Received - ${orderData.id}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -544,15 +549,16 @@ async function sendOrderEmail(orderData: any, userEmail: string) {
             
             <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <p style="margin: 10px 0;"><strong>Order ID:</strong> ${orderData.id}</p>
+              <p style="margin: 10px 0;"><strong>Customer:</strong> ${shippingName}</p>
               <p style="margin: 10px 0;"><strong>Customer Email:</strong> ${userEmail}</p>
-              <p style="margin: 10px 0;"><strong>Total Amount:</strong> &#8377;${orderData.total?.toFixed(2)}</p>
-              <p style="margin: 10px 0;"><strong>Payment Status:</strong> <span style="color: ${orderData.paymentStatus === 'completed' ? '#10b981' : '#f59e0b'}; text-transform: capitalize;">${orderData.paymentStatus}</span></p>
+              <p style="margin: 10px 0;"><strong>Total Amount:</strong> &#8377;${(orderData.total ?? 0).toFixed(2)}</p>
+              <p style="margin: 10px 0;"><strong>Payment Status:</strong> <span style="color: ${payColor}; text-transform: capitalize;">${payStatus}</span></p>
               <p style="margin: 10px 0;"><strong>Order Date:</strong> ${new Date(orderData.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
             </div>
 
             <h3 style="color: #1f2937;">Shipping Address</h3>
             <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <p style="margin: 5px 0;"><strong>${orderData.shippingAddress?.name || 'N/A'}</strong></p>
+              <p style="margin: 5px 0;"><strong>${shippingName}</strong></p>
               <p style="margin: 5px 0;">${orderData.shippingAddress?.phone || 'N/A'}</p>
               <p style="margin: 5px 0;">${orderData.shippingAddress?.address || 'N/A'}</p>
               <p style="margin: 5px 0;">${orderData.shippingAddress?.city || 'N/A'}, ${orderData.shippingAddress?.state || 'N/A'} - ${orderData.shippingAddress?.zipCode || 'N/A'}</p>
@@ -570,12 +576,12 @@ async function sendOrderEmail(orderData: any, userEmail: string) {
             </div>
 
             <div style="margin-top: 30px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
-              <p style="margin: 0; color: #92400e;"><strong>&#9889; Action Required:</strong> Please process this order in the admin panel.</p>
+             
             </div>
           </div>
 
           <div style="background: #1f2937; padding: 20px; text-align: center; color: white;">
-            <p style="margin: 0;">&copy; 2024 Decorizz. All rights reserved.</p>
+            <p style="margin: 0;">&copy; ${new Date().getFullYear()} Decorizz. All rights reserved.</p>
           </div>
         </div>
       `
@@ -610,6 +616,55 @@ async function sendOrderEmail(orderData: any, userEmail: string) {
     }
   } catch (error) {
     console.error('Email send error:', error);
+    return false;
+  }
+}
+// Forgot password email
+async function sendResetEmail(toEmail: string, resetToken: string) {
+  try {
+    const resetLink = `${APP_URL}/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const emailContent = {
+      from: 'Decorizz <info@decorizz.com>',
+      to: toEmail,
+      subject: 'Reset your Decorizz password',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%); padding: 24px; text-align: center;">
+            <h1 style="color: white; margin: 0;">Password Reset</h1>
+          </div>
+          <div style="padding: 24px;">
+            <p style="color: #1f2937;">We received a request to reset your password.</p>
+            <p style="color: #1f2937;">Click the button below to set a new password:</p>
+            <p style="text-align: center;">
+              <a href="${resetLink}" style="display:inline-block;background:#14b8a6;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:600">Reset Password</a>
+            </p>
+            <p style="color:#6b7280;">If the button doesn’t work, copy and paste this link into your browser:</p>
+            <p style="word-break:break-all;color:#6b7280;">${resetLink}</p>
+            <p style="color:#6b7280;">If you didn’t request this, you can safely ignore this email.</p>
+          </div>
+          <div style="background:#f3f4f6;padding:16px;text-align:center;color:#6b7280;">
+            <p style="margin:0">&copy; ${new Date().getFullYear()} Decorizz</p>
+          </div>
+        </div>
+      `
+    };
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailContent),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      console.error('Resend reset email error:', result);
+      return false;
+    }
+    console.log('✅ Reset email sent:', result.id);
+    return true;
+  } catch (e) {
+    console.error('Failed to send reset email:', e);
     return false;
   }
 }
@@ -663,7 +718,7 @@ app.post('/make-server-52d68140/orders', async (c) => {
 
     // Send email notification
     const userProfile = await kv.get(`user:${user.id}`);
-    await sendOrderEmail(order, userProfile?.email || 'customer@example.com');
+    await sendOrderEmail(order, userProfile?.email || 'customer@example.com', userProfile?.name);
 
     return c.json({ success: true, order });
   } catch (error) {
@@ -785,6 +840,70 @@ app.post('/make-server-52d68140/testimonials', async (c) => {
   } catch (error) {
     console.log('Create testimonial error:', error);
     return c.json({ error: 'Failed to create testimonial' }, 500);
+  }
+});
+
+app.put('/make-server-52d68140/testimonials/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const userProfile = await kv.get(`user:${user.id}`);
+    if (!userProfile || userProfile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    const existing = await kv.get(`testimonial:${id}`);
+    if (!existing) return c.json({ error: 'Testimonial not found' }, 404);
+    const updates = await c.req.json();
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await kv.set(`testimonial:${id}`, updated);
+    return c.json({ success: true, testimonial: updated });
+  } catch (error) {
+    console.log('Update testimonial error:', error);
+    return c.json({ error: 'Failed to update testimonial' }, 500);
+  }
+});
+
+app.delete('/make-server-52d68140/testimonials/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const userProfile = await kv.get(`user:${user.id}`);
+    if (!userProfile || userProfile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    const existing = await kv.get(`testimonial:${id}`);
+    if (!existing) return c.json({ error: 'Testimonial not found' }, 404);
+    await kv.del(`testimonial:${id}`);
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Delete testimonial error:', error);
+    return c.json({ error: 'Failed to delete testimonial' }, 500);
+  }
+});
+
+// Upload testimonial profile image to storage
+app.post('/make-server-52d68140/testimonials/profile/upload', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const userProfile = await kv.get(`user:${user.id}`);
+    if (!userProfile || userProfile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+
+    const body = await c.req.json();
+    const { image, fileName, mimeType } = body || {};
+    if (!image || !fileName) return c.json({ error: 'Image and fileName are required' }, 400);
+
+    const parsedMime = mimeType || image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
+    const base64 = image.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const filePath = `profiles/${Date.now()}-${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from('make-52d68140-gallery')
+      .upload(filePath, buffer, { contentType: parsedMime, upsert: false });
+    if (uploadError) return c.json({ error: uploadError.message || 'Upload failed' }, 400);
+    const { data: urlData } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(filePath);
+    return c.json({ success: true, url: urlData.publicUrl, filePath });
+  } catch (e) {
+    console.log('Testimonial profile upload error:', e);
+    return c.json({ error: 'Upload failed' }, 500);
   }
 });
 
@@ -960,12 +1079,12 @@ app.post('/make-server-52d68140/auth/forgot-password', async (c) => {
     await kv.set(`reset-email:${email}`, resetToken);
     
     console.log(`Password reset requested for ${email}. Token: ${resetToken}`);
+    await sendResetEmail(email, resetToken);
     
     return c.json({ 
-      success: true, 
+      success: true,
       message: 'If the email exists, a reset link has been sent',
-      // In production, send email. For demo, return token
-      resetToken, 
+      resetToken,
     });
   } catch (error) {
     console.log('Forgot password error:', error);
@@ -1343,6 +1462,217 @@ app.delete('/make-server-52d68140/contact-messages/:id', async (c) => {
   }
 });
 
+// FAQs: Public GET, Admin CRUD
+app.get('/make-server-52d68140/faqs', async (c) => {
+  try {
+    const items = await kv.getByPrefix('faq:');
+    const sorted = (items || []).sort((a: any, b: any) => {
+      const ao = a.order ?? 0;
+      const bo = b.order ?? 0;
+      if (ao !== bo) return ao - bo;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+    return c.json({ faqs: sorted });
+  } catch (e) {
+    console.log('FAQs fetch error', e);
+    return c.json({ error: 'Failed to load FAQs' }, 500);
+  }
+});
+
+app.post('/make-server-52d68140/faqs', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const body = await c.req.json();
+    const { question, answer, order } = body || {};
+    if (!question || !answer) return c.json({ error: 'Question and answer required' }, 400);
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const faq = { id, question, answer, order: Number(order) || 0, createdAt: new Date().toISOString() };
+    await kv.set(`faq:${id}`, faq);
+    return c.json({ success: true, faq });
+  } catch (e) {
+    console.log('FAQ create error', e);
+    return c.json({ error: 'Failed to create FAQ' }, 500);
+  }
+});
+
+app.put('/make-server-52d68140/faqs/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    const existing = await kv.get(`faq:${id}`);
+    if (!existing) return c.json({ error: 'FAQ not found' }, 404);
+    const updates = await c.req.json();
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString(), order: Number(updates.order ?? existing.order) };
+    await kv.set(`faq:${id}`, updated);
+    return c.json({ success: true, faq: updated });
+  } catch (e) {
+    console.log('FAQ update error', e);
+    return c.json({ error: 'Failed to update FAQ' }, 500);
+  }
+});
+
+app.delete('/make-server-52d68140/faqs/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    const existing = await kv.get(`faq:${id}`);
+    if (!existing) return c.json({ error: 'FAQ not found' }, 404);
+    await kv.del(`faq:${id}`);
+    return c.json({ success: true });
+  } catch (e) {
+    console.log('FAQ delete error', e);
+    return c.json({ error: 'Failed to delete FAQ' }, 500);
+  }
+});
+
+// Videos: Public GET, Admin CRUD
+app.get('/make-server-52d68140/videos', async (c) => {
+  try {
+    const items = await kv.getByPrefix('video:');
+    const sorted = (items || []).sort((a: any, b: any) => {
+      const ao = a.order ?? 0;
+      const bo = b.order ?? 0;
+      if (ao !== bo) return ao - bo;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+    return c.json({ videos: sorted });
+  } catch (e) {
+    console.log('Videos fetch error', e);
+    return c.json({ error: 'Failed to load videos' }, 500);
+  }
+});
+
+app.post('/make-server-52d68140/videos', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const body = await c.req.json();
+    const { title, url, caption, thumbnail, tags, order } = body || {};
+    if (!title || !url) return c.json({ error: 'Title and url required' }, 400);
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const video = {
+      id,
+      title,
+      url,
+      caption: caption || '',
+      thumbnail: thumbnail || '',
+      tags: Array.isArray(tags) ? tags : [],
+      order: Number(order) || 0,
+      createdAt: new Date().toISOString(),
+    };
+    await kv.set(`video:${id}`, video);
+    return c.json({ success: true, video });
+  } catch (e) {
+    console.log('Video create error', e);
+    return c.json({ error: 'Failed to create video' }, 500);
+  }
+});
+
+app.put('/make-server-52d68140/videos/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    const existing = await kv.get(`video:${id}`);
+    if (!existing) return c.json({ error: 'Video not found' }, 404);
+    const updates = await c.req.json();
+    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString(), order: Number(updates.order ?? existing.order) };
+    await kv.set(`video:${id}`, updated);
+    return c.json({ success: true, video: updated });
+  } catch (e) {
+    console.log('Video update error', e);
+    return c.json({ error: 'Failed to update video' }, 500);
+  }
+});
+
+app.delete('/make-server-52d68140/videos/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    const existing = await kv.get(`video:${id}`);
+    if (!existing) return c.json({ error: 'Video not found' }, 404);
+    await kv.del(`video:${id}`);
+    return c.json({ success: true });
+  } catch (e) {
+    console.log('Video delete error', e);
+    return c.json({ error: 'Failed to delete video' }, 500);
+  }
+});
+
+// Upload video thumbnail to storage
+app.post('/make-server-52d68140/videos/thumbnail/upload', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const body = await c.req.json();
+    const { image, fileName, mimeType } = body || {};
+    if (!image || !fileName) return c.json({ error: 'Image and fileName required' }, 400);
+    const parsedMime = mimeType || image.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
+    const base64 = image.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Uint8Array.from(atob(base64), (ch) => ch.charCodeAt(0));
+    const MAX_THUMB_SIZE = 2 * 1024 * 1024; // 2 MB
+    if (buffer.byteLength > MAX_THUMB_SIZE) {
+      return c.json({ error: 'Thumbnail too large. Max size is 2MB.' }, 413);
+    }
+    const filePath = `videos/${Date.now()}-${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from('make-52d68140-gallery')
+      .upload(filePath, buffer, { contentType: parsedMime, upsert: false });
+    if (uploadError) return c.json({ error: uploadError.message || 'Upload failed' }, 400);
+    const { data } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(filePath);
+    return c.json({ success: true, url: data.publicUrl, filePath });
+  } catch (e) {
+    console.log('Video thumbnail upload error:', e);
+    return c.json({ error: 'Upload failed' }, 500);
+  }
+});
+
+app.post('/make-server-52d68140/videos/upload', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const body = await c.req.json();
+    const { video, fileName, mimeType } = body || {};
+    if (!video || !fileName) return c.json({ error: 'Video and fileName required' }, 400);
+    const parsedMime = mimeType || video.match(/^data:(video\/[\-\w]+);base64,/)?.[1] || 'video/mp4';
+    const base64 = video.replace(/^data:video\/[\-\w]+;base64,/, '');
+    const buffer = Uint8Array.from(atob(base64), (ch) => ch.charCodeAt(0));
+    const MAX_VIDEO_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (buffer.byteLength > MAX_VIDEO_SIZE) {
+      return c.json({ error: 'Video too large. Max size is 10MB.' }, 413);
+    }
+    const filePath = `videos/${Date.now()}-${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from('make-52d68140-gallery')
+      .upload(filePath, buffer, { contentType: parsedMime, upsert: false });
+    if (uploadError) return c.json({ error: uploadError.message || 'Upload failed' }, 400);
+    const { data } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(filePath);
+    return c.json({ success: true, url: data.publicUrl, filePath });
+  } catch (e) {
+    console.log('Video upload error:', e);
+    return c.json({ error: 'Upload failed' }, 500);
+  }
+});
 Deno.serve(app.fetch);// Add these routes before Deno.serve(app.fetch); in index.tsx
 
 // Payment Routes
@@ -1372,28 +1702,32 @@ app.post('/make-server-52d68140/payments', async (c) => {
     const paymentData = await c.req.json();
     const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    const payment = {
-      id: paymentId,
-      userId: user.id,
-      orderId: paymentData.orderId,
-      amount: paymentData.amount,
-      paymentMethod: paymentData.paymentMethod || 'razorpay',
-      paymentId: paymentData.paymentId || '',
-      paymentSignature: paymentData.paymentSignature || '',
-      status: paymentData.status || 'pending',
-      createdAt: new Date().toISOString(),
-    };
+  const payment = {
+    id: paymentId,
+    userId: user.id,
+    orderId: paymentData.orderId,
+    amount: paymentData.amount,
+    paymentMethod: paymentData.paymentMethod || 'razorpay',
+    paymentId: paymentData.paymentId || '',
+    paymentSignature: paymentData.paymentSignature || '',
+    status: paymentData.status || 'pending',
+    createdAt: new Date().toISOString(),
+  };
 
     await kv.set(`payment:${paymentId}`, payment);
 
-    if (paymentData.orderId) {
-      const order = await kv.get(`order:${paymentData.orderId}`);
-      if (order) {
-        order.paymentStatus = payment.status;
-        order.paymentId = paymentId;
-        await kv.set(`order:${paymentData.orderId}`, order);
+  if (paymentData.orderId) {
+    const order = await kv.get(`order:${paymentData.orderId}`);
+    if (order) {
+      order.paymentStatus = payment.status;
+      order.paymentId = paymentId;
+      await kv.set(`order:${paymentData.orderId}`, order);
+      if ((payment.status || '').toLowerCase() === 'completed') {
+        const userProfile = await kv.get(`user:${user.id}`);
+        await sendOrderEmail(order, userProfile?.email || 'customer@example.com', userProfile?.name);
       }
     }
+  }
 
     return c.json({ success: true, payment });
   } catch (error) {
@@ -1420,17 +1754,21 @@ app.put('/make-server-52d68140/payments/:id', async (c) => {
     }
 
     const updates = await c.req.json();
-    const updatedPayment = { ...payment, ...updates, updatedAt: new Date().toISOString() };
+  const updatedPayment = { ...payment, ...updates, updatedAt: new Date().toISOString() };
 
-    await kv.set(`payment:${id}`, updatedPayment);
+  await kv.set(`payment:${id}`, updatedPayment);
 
-    if (updates.status && payment.orderId) {
-      const order = await kv.get(`order:${payment.orderId}`);
-      if (order) {
-        order.paymentStatus = updates.status;
-        await kv.set(`order:${payment.orderId}`, order);
+  if (updates.status && payment.orderId) {
+    const order = await kv.get(`order:${payment.orderId}`);
+    if (order) {
+      order.paymentStatus = updates.status;
+      await kv.set(`order:${payment.orderId}`, order);
+      if ((updates.status || '').toLowerCase() === 'completed') {
+        const userProfile = await kv.get(`user:${payment.userId}`);
+        await sendOrderEmail(order, userProfile?.email || 'customer@example.com', userProfile?.name);
       }
     }
+  }
 
     return c.json({ success: true, payment: updatedPayment });
   } catch (error) {

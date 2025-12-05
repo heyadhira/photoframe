@@ -12,6 +12,8 @@ import {
   CreditCard,
   Truck,
   Mail,
+  HelpCircle,
+  Film,
   LogOut,
   Menu,
   X,
@@ -69,6 +71,8 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
     { label: "Delivery", icon: Truck, path: "/admin/delivery" },
     { label: "Testimonials", icon: Star, path: "/admin/testimonials" },
     { label: "Contacts", icon: Mail, path: "/admin/contacts" },
+    { label: "FAQs", icon: HelpCircle, path: "/admin/faqs" },
+    { label: "Videos", icon: Film, path: "/admin/videos" },
   ];
 
   return (

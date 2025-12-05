@@ -19,7 +19,9 @@ export default function CartPage() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      // Unauthenticated: show empty cart UI, don't redirect
+      setLoading(false);
+      setCart({ items: [] });
       return;
     }
     fetchCart();
@@ -272,7 +274,13 @@ export default function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => navigate('/checkout')}
+                  onClick={() => {
+                    if (!user) {
+                      navigate('/login', { state: { redirect: '/checkout' } });
+                    } else {
+                      navigate('/checkout');
+                    }
+                  }}
                   className="w-full px-6 py-3 rounded-xl text-white shadow-xl mb-3 transition"
                   style={{ backgroundColor: "#14b8a6" }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = "#0d9488"}

@@ -25,7 +25,10 @@ export default function AdminTestimonials() {
     name: "",
     text: "",
     rating: 5,
+    profileImage: "",
   });
+  const [profileFile, setProfileFile] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string>("");
 
   useEffect(() => {
     fetchTestimonials();
@@ -56,6 +59,19 @@ export default function AdminTestimonials() {
     e.preventDefault();
 
     try {
+      let profileUrl = formData.profileImage;
+      if (profileFile) {
+        const base64 = await fileToDataURL(profileFile);
+        const resUp = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials/profile/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ image: base64, fileName: profileFile.name }),
+        });
+        const dataUp = await resUp.json();
+        if (!resUp.ok) throw new Error(dataUp.error || 'Profile upload failed');
+        profileUrl = dataUp.url;
+      }
+
       const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials`,
         {
@@ -64,14 +80,16 @@ export default function AdminTestimonials() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({ ...formData, profileImage: profileUrl }),
         }
       );
 
       if (res.ok) {
         toast.success("Testimonial added");
         setShowForm(false);
-        setFormData({ name: "", text: "", rating: 5 });
+        setFormData({ name: "", text: "", rating: 5, profileImage: "" });
+        setProfileFile(null);
+        setProfilePreview("");
         fetchTestimonials();
       } else {
         toast.error("Failed to add testimonial");
@@ -81,6 +99,13 @@ export default function AdminTestimonials() {
       toast.error("Error adding testimonial");
     }
   };
+
+  const fileToDataURL = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   const deleteTestimonial = async (id: string) => {
     if (!confirm("Are you sure you want to delete this testimonial?")) return;
@@ -185,6 +210,21 @@ export default function AdminTestimonials() {
                 </select>
               </div>
 
+              {/* Profile Image */}
+              <div>
+                <label className="block text-gray-700 mb-1">Profile Image (optional)</label>
+                <input type="file" accept="image/*" onChange={(e)=>{
+                  const f = e.target.files?.[0] || null;
+                  setProfileFile(f);
+                  setProfilePreview(f ? URL.createObjectURL(f) : "");
+                }} className="w-full" />
+                {profilePreview && (
+                  <div className="mt-2">
+                    <img src={profilePreview} alt="preview" className="w-16 h-16 rounded-full object-cover" />
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
@@ -217,28 +257,48 @@ export default function AdminTestimonials() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {testimonials.map((t) => (
-              <div
-                key={t.id}
-                className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition"
-              >
-                <div className="flex mb-3">
+              <div key={t.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition">
+                <div className="flex items-start gap-3 mb-3">
+                  <img src={t.profileImage || ''} alt={t.name} className="w-10 h-10 rounded-full object-cover bg-gray-100" />
+                  <div className="flex-1">
+                    <input defaultValue={t.name} onBlur={async (e)=>{
+                      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials/${t.id}`, {
+                        method: 'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ name: e.target.value })
+                      }); const d = await res.json(); if (!res.ok) return toast.error(d.error||'Update failed'); fetchTestimonials();
+                    }} className="border rounded px-3 py-2 w-full" />
+                    <textarea defaultValue={t.text} onBlur={async (e)=>{
+                      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials/${t.id}`, {
+                        method: 'PUT', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ text: e.target.value })
+                      }); const d = await res.json(); if (!res.ok) return toast.error(d.error||'Update failed'); fetchTestimonials();
+                    }} className="mt-2 border rounded px-3 py-2 w-full" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Change Image</label>
+                    <input type="file" accept="image/*" onChange={async (e)=>{
+                      const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=async ()=>{
+                        const base64=reader.result as string; const up=await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials/profile/upload`, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${accessToken}` }, body: JSON.stringify({ image: base64, fileName: f.name })}); const ud=await up.json(); if(!up.ok) return toast.error(ud.error||'Upload failed'); const res=await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials/${t.id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${accessToken}` }, body: JSON.stringify({ profileImage: ud.url })}); const d=await res.json(); if(!res.ok) return toast.error(d.error||'Update failed'); fetchTestimonials(); };
+                      reader.readAsDataURL(f);
+                    }} className="text-sm" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-gray-700">Rating</span>
+                  <select defaultValue={t.rating} onChange={async (e)=>{
+                    const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/testimonials/${t.id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${accessToken}` }, body: JSON.stringify({ rating: Number(e.target.value) })}); const d=await res.json(); if(!res.ok) return toast.error(d.error||'Update failed'); fetchTestimonials();
+                  }} className="border rounded px-2 py-1">
+                    {[5,4,3,2,1].map(n=>(<option key={n} value={n}>{n} Stars</option>))}
+                  </select>
+                </div>
+
+                <div className="flex mb-2">
                   {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-5 h-5 fill-yellow-400 text-yellow-400"
-                    />
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
 
-                <p className="text-gray-700 mb-4">{t.text}</p>
-                <p className="font-semibold text-gray-900">{t.name}</p>
-
-                <button
-                  onClick={() => deleteTestimonial(t.id)}
-                  className="mt-4 flex items-center gap-2 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
+                <button onClick={() => deleteTestimonial(t.id)} className="mt-2 flex items-center gap-2 text-red-600 hover:text-red-700">
+                  <Trash2 className="w-4 h-4" /> Delete
                 </button>
               </div>
             ))}

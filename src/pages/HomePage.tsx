@@ -6,6 +6,7 @@ import { ProductCard } from "../components/ProductCard";
 import { Star, Leaf, Palette, Brush, ShieldCheck } from "lucide-react";
 import { projectId, publicAnonKey } from "../utils/supabase/info";
 
+
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -40,6 +41,7 @@ interface Testimonial {
   name: string;
   text: string;
   rating: number;
+  profileImage?: string;
 }
 
 export default function HomePage() {
@@ -57,6 +59,25 @@ export default function HomePage() {
     
   ];
   const [formatFilter, setFormatFilter] = useState<'All' | 'Rolled' | 'Canvas' | 'Frame'>('All');
+  const [bestApi, setBestApi] = useState<CarouselApi | null>(null);
+  const [bestSelected, setBestSelected] = useState(0);
+  const [viewportW, setViewportW] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [faqsLoading, setFaqsLoading] = useState(true);
+  const computeTags = () => {
+    const words = new Set<string>();
+    featuredProducts.forEach((p:any) => {
+      (p.name || '').split(/\s+/).forEach((w:string) => {
+        const clean = w.replace(/[^A-Za-z]/g, '');
+        const pick = clean.toLowerCase();
+        const allow = ['lion','zebra','owl','rama','virat','horses','canvas','frame','black'];
+        if (allow.includes(pick)) words.add(clean.charAt(0).toUpperCase()+clean.slice(1).toLowerCase());
+      });
+    });
+    const list = Array.from(words);
+    return list.length ? list.slice(0, 6) : ['Lion','Black','Rama','Owl','Virat','Horses'];
+  };
+  const tags = computeTags();
 
   useEffect(() => {
     fetchHomeData();
@@ -95,6 +116,49 @@ export default function HomePage() {
     }, 2000);
     return () => clearInterval(id);
   }, [heroApi]);
+
+  useEffect(() => {
+    const onResize = () => setViewportW(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    fetchFaqs();
+  }, []);
+
+  const fetchFaqs = async () => {
+    try {
+      setFaqsLoading(true);
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/faqs`);
+      const data = await res.json();
+      setFaqs(data.faqs || []);
+    } catch {}
+    finally { setFaqsLoading(false); }
+  };
+
+  const slidesPerView = viewportW >= 1024 ? 3 : viewportW >= 640 ? 2 : 1;
+
+useEffect(() => {
+  if (!bestApi) return;
+
+  const onSelect = () => {
+    setBestSelected(bestApi.selectedScrollSnap());
+  };
+
+  bestApi.on("select", onSelect);
+
+  // Auto slide
+  const interval = setInterval(() => {
+    try { bestApi.scrollNext(); } catch {}
+  }, 2000);
+
+  return () => {
+    bestApi.off("select", onSelect);
+    clearInterval(interval);
+  };
+}, [bestApi]);
+
 
   const bestSellerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -146,8 +210,10 @@ const scrollBestSellerRight = () => {
 
 
 
+
+
 {/* BEST SELLERS */}
-<section className="max-w-7xl mx-auto px-4 py-16 lg:py-20 relative overflow-hidden">
+<section className="best-section max-w-7xl mx-auto px-4 py-16 lg:py-20 relative overflow-hidden">
 
   {/* Heading */}
   <div className="text-center mb-8 fade-up">
@@ -156,82 +222,101 @@ const scrollBestSellerRight = () => {
       <span style={{ color: '#14b8a6' }}> Frames</span> for Every Room
     </h2>
   </div>
-  <div className="flex justify-center gap-3 mb-10">
-    {(['All','Rolled','Canvas','Frame'] as const).map(opt => (
+
+  {/* Filter Pills */}
+  <div className="flex justify-center gap-3 mb-12">
+    {(['All', 'Rolled', 'Canvas', 'Frame'] as const).map(opt => (
       <button
         key={opt}
         onClick={() => setFormatFilter(opt)}
-        className="px-6 py-2 rounded-full border text-sm font-semibold"
-        style={{
-          backgroundColor: formatFilter === opt ? '#14b8a6' : 'white',
-          color: formatFilter === opt ? 'white' : '#111827',
-          borderColor: '#d1d5db'
-        }}
+        className={`pill ${formatFilter === opt ? 'active' : ''}`}
       >
-        <span
-          className="inline-block w-2 h-2 rounded-full mr-2 align-middle"
-          style={{
-            backgroundColor: formatFilter === opt ? '#111827' : 'transparent',
-            border: '1.5px solid #9ca3af'
-          }}
-        />
         {opt}
       </button>
     ))}
   </div>
 
+  {/* SLIDER */}
   {loading ? (
-    <div className="flex justify-center py-12">
-      <div className="animate-spin h-12 w-12 border-b-2 border-teal-500 rounded-full" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+          <div className="skeleton skeleton-img" style={{ aspectRatio: '4 / 5' }} />
+          <div className="p-4">
+            <div className="skeleton skeleton-line lg w-2/3" />
+          </div>
+        </div>
+      ))}
     </div>
   ) : (
-    <div className="best-slider">
-      
-      <div className="best-track">
-        {[
-          ...featuredProducts.filter((p:any)=> formatFilter==='All' ? true : (p.format===formatFilter)),
-          ...featuredProducts.filter((p:any)=> formatFilter==='All' ? true : (p.format===formatFilter))
-        ].map((p, index) => {
-          
-          // Define center every 3 items
-          const position = index % 1;
-          const isCenter = position === 1; // middle card of 3
+    <div className="relative mb-12">
 
-          return (
-            <div key={index} className="best-item">
-              <div className={
-                `curve-card curve-reflection fade-up
-                 ${isCenter ? "best-center" : "best-side"}`
-              }>
-                <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '4 / 5' }}>
-                  <img src={(p as any).image} alt={(p as any).name} className="w-full h-full object-cover" />
-                  <div
-                    className="absolute bottom-0 left-0 right-0 flex items-center justify-center text-center"
-                    style={{
-                      height: '56px',
-                      backgroundColor:
-                        (():string => {
-                          const f = (p as any).format;
-                          if (f==='Rolled') return 'rgba(250, 210, 225, 0.65)';
-                          if (f==='Canvas') return 'rgba(205, 247, 234, 0.65)';
-                          if (f==='Frame') return 'rgba(229, 231, 235, 0.65)';
-                          return 'rgba(229, 231, 235, 0.65)';
-                        })(),
-                      backdropFilter: 'blur(2px)'
-                    }}
-                  >
-                    <span className="text-xl font-serif font-semibold text-gray-800">{(p as any).name}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <Carousel
+        opts={{ loop: true, align: "center", slidesToScroll: 1 }}
+        setApi={setBestApi}
+        className="w-full overflow-hidden"
+      >
+        <CarouselContent className="gap-6">
+
+          {featuredProducts
+            .filter((p: any) => formatFilter === "All" ? true : p.format === formatFilter)
+            .map((p: any, idx: number) => {
+
+              const total = featuredProducts.filter((x: any) =>
+                formatFilter === "All" ? true : x.format === formatFilter
+              ).length;
+
+              const leftIndex = (bestSelected - 1 + total) % total;
+              const rightIndex = (bestSelected + 1) % total;
+
+              const isCenter = idx === bestSelected;
+              const isLeft = idx === leftIndex;
+              const isRight = idx === rightIndex;
+
+              let positionClass = "best-item-side";
+              if (isCenter) positionClass = "best-item-center";
+              else if (isLeft) positionClass = "best-item-left";
+              else if (isRight) positionClass = "best-item-right";
+
+              return (
+                <CarouselItem
+  key={p.id || idx}
+  className="best-carousel-item basis-full sm:basis-1/2 lg:basis-1/3 flex justify-center"
+>
+  <Link 
+    to={`/product/${p.id}`} 
+    className={`best-item ${positionClass}`}
+    style={{ textDecoration: "none" }}
+  >
+    <div
+      className="best-card cursor-pointer"
+      style={{ aspectRatio: isCenter ? "4 / 5" : "4 / 4" }}
+    >
+      <img src={p.image} alt={p.name} />
+      <div className="best-caption">{p.name}</div>
+    </div>
+  </Link>
+</CarouselItem>
+
+              );
+
+            })}
+
+        </CarouselContent>
+
+        <CarouselPrevious className="hidden lg:flex" />
+        <CarouselNext className="hidden lg:flex" />
+      </Carousel>
+
+      {/* GIANT CLICK AREAS */}
+      <div className="best-click-left" onClick={() => bestApi?.scrollPrev()}></div>
+      <div className="best-click-right" onClick={() => bestApi?.scrollNext()}></div>
 
     </div>
   )}
 </section>
+
+
 
 
 
@@ -500,7 +585,29 @@ const scrollBestSellerRight = () => {
 
 
       {/* TESTIMONIALS */}
-      {testimonials.length > 0 && (
+      {loading ? (
+        <section className="py-16 lg:py-20 bg-[#faf7f4]">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-6 rounded-lg bg-white shadow-sm">
+                  <div className="flex items-start mb-4 gap-3">
+                    <div className="skeleton rounded-full w-12 h-12" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton skeleton-line lg w-1/2" />
+                      <div className="skeleton skeleton-line sm w-1/3" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="skeleton skeleton-line lg w-full" />
+                    <div className="skeleton skeleton-line lg w-5/6" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : testimonials.length > 0 && (
         <section className="py-16 lg:py-20 bg-[#faf7f4] relative">
 
           <div className="max-w-7xl mx-auto px-4">
@@ -527,16 +634,7 @@ const scrollBestSellerRight = () => {
                 > 
                   <div className="flex items-start mb-4"> 
                     
-                    <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-lg mr-3 flex-shrink-0" 
-                      style={{ 
-                        backgroundColor: '#ccfbf1', 
-                        color: '#14b8a6', 
-                        fontWeight: 700 
-                      }} 
-                    > 
-                      {t.name.charAt(0)} 
-                    </div> 
+                    <img src={t.profileImage || ''} alt={t.name} className="w-12 h-12 rounded-full object-cover mr-3 bg-gray-100 flex-shrink-0" />
                     <div className="flex-1"> 
                       <p className="text-black text-base" style={{ fontWeight: 700 }}>{t.name}</p> 
                       <div className="flex mt-1"> 
@@ -572,6 +670,42 @@ const scrollBestSellerRight = () => {
           </div> 
         </section> 
       )}
+
+
+      {/* FAQ Section */}
+{faqsLoading ? (
+  <section className="max-w-7xl mx-auto px-4 py-16">
+    <div className="space-y-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-xl border bg-white shadow-sm p-4">
+          <div className="skeleton skeleton-line lg w-2/3 mb-2" />
+          <div className="skeleton skeleton-line lg w-full mb-2" />
+          <div className="skeleton skeleton-line lg w-5/6" />
+        </div>
+      ))}
+    </div>
+  </section>
+) : faqs.length > 0 && (
+  <section className="max-w-7xl mx-auto px-4 py-16">
+    <div className="text-center mb-8">
+      <h2 className="section-title"><span className="text-[#3b2f27]">Frequently</span> <span style={{ color: '#14b8a6' }}>Asked Questions</span></h2>
+      <p className="text-gray-600 mt-2">Answers to common questions about our frames and services.</p>
+    </div>
+    <div className="space-y-4">
+      {faqs.map((f, i) => (
+        <details key={f.id} className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
+            <span className="font-semibold text-gray-900">{f.question}</span>
+            <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"/></svg>
+          </summary>
+          <div className="px-4 pb-4 text-gray-700">
+            {f.answer}
+          </div>
+        </details>
+      ))}
+    </div>
+  </section>
+)}
 
       <Footer />
      

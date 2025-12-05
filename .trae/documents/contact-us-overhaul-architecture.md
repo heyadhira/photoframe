@@ -32,48 +32,61 @@ graph TD
 ```
 
 ## 2. Technology Description
-- **Frontend**: React@18 + TypeScript + TailwindCSS@3 + Vite
-- **Initialization Tool**: vite-init (default for React projects)
-- **Backend**: Supabase (Backend-as-a-Service)
-- **Database**: PostgreSQL (via Supabase)
-- **Authentication**: Supabase Auth
-- **Styling**: TailwindCSS with custom CSS classes matching About page theme
-- **Icons**: Lucide React
-- **Maps**: Google Maps Embed API
+
+* **Frontend**: React\@18 + TypeScript + TailwindCSS\@3 + Vite
+
+* **Initialization Tool**: vite-init (default for React projects)
+
+* **Backend**: Supabase (Backend-as-a-Service)
+
+* **Database**: PostgreSQL (via Supabase)
+
+* **Authentication**: Supabase Auth
+
+* **Styling**: TailwindCSS with custom CSS classes matching About page theme
+
+* **Icons**: Lucide React
+
+* **Maps**: Google Maps Embed API
 
 ## 3. Route Definitions
-| Route | Purpose |
-|-------|---------|
-| /contact | Enhanced Contact Us page with theme matching and Google Maps integration |
-| /admin/contact-messages | Admin dashboard for viewing and managing contact form submissions |
-| /api/contact/submit | API endpoint for processing contact form submissions |
-| /api/contact/messages | API endpoint for retrieving contact messages (admin only) |
-| /api/contact/message/:id | API endpoint for updating individual message status |
+
+| Route                    | Purpose                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| /contact                 | Enhanced Contact Us page with theme matching and Google Maps integration |
+| /admin/contact-messages  | Admin dashboard for viewing and managing contact form submissions        |
+| /api/contact/submit      | API endpoint for processing contact form submissions                     |
+| /api/contact/messages    | API endpoint for retrieving contact messages (admin only)                |
+| /api/contact/message/:id | API endpoint for updating individual message status                      |
 
 ## 4. API Definitions
 
 ### 4.1 Contact Form Submission API
+
 ```
 POST /api/contact/submit
 ```
 
 Request:
-| Param Name | Param Type | isRequired | Description |
-|------------|------------|------------|-------------|
-| name | string | true | Full name of the person contacting |
-| email | string | true | Valid email address for response |
-| phone | string | false | Phone number (optional) |
-| subject | string | true | Subject/topic of the inquiry |
-| message | string | true | Detailed message content (min 10 characters) |
+
+| Param Name | Param Type | isRequired | Description                                  |
+| ---------- | ---------- | ---------- | -------------------------------------------- |
+| name       | string     | true       | Full name of the person contacting           |
+| email      | string     | true       | Valid email address for response             |
+| phone      | string     | false      | Phone number (optional)                      |
+| subject    | string     | true       | Subject/topic of the inquiry                 |
+| message    | string     | true       | Detailed message content (min 10 characters) |
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| success | boolean | Indicates if submission was successful |
-| messageId | string | Unique identifier for the submitted message |
-| timestamp | string | ISO timestamp of submission |
+
+| Param Name | Param Type | Description                                 |
+| ---------- | ---------- | ------------------------------------------- |
+| success    | boolean    | Indicates if submission was successful      |
+| messageId  | string     | Unique identifier for the submitted message |
+| timestamp  | string     | ISO timestamp of submission                 |
 
 Example Request:
+
 ```json
 {
   "name": "John Doe",
@@ -85,35 +98,40 @@ Example Request:
 ```
 
 ### 4.2 Contact Messages Retrieval API
+
 ```
 GET /api/contact/messages
 ```
 
 Query Parameters:
-| Param Name | Param Type | isRequired | Description |
-|------------|------------|------------|-------------|
-| status | string | false | Filter by message status (all, unread, responded, archived) |
-| search | string | false | Search term for name, email, or subject |
-| limit | number | false | Number of results to return (default: 50, max: 100) |
-| offset | number | false | Number of results to skip for pagination |
+
+| Param Name | Param Type | isRequired | Description                                                 |
+| ---------- | ---------- | ---------- | ----------------------------------------------------------- |
+| status     | string     | false      | Filter by message status (all, unread, responded, archived) |
+| search     | string     | false      | Search term for name, email, or subject                     |
+| limit      | number     | false      | Number of results to return (default: 50, max: 100)         |
+| offset     | number     | false      | Number of results to skip for pagination                    |
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| messages | array | Array of contact message objects |
-| total | number | Total count of messages matching criteria |
-| hasMore | boolean | Indicates if more results are available |
+
+| Param Name | Param Type | Description                               |
+| ---------- | ---------- | ----------------------------------------- |
+| messages   | array      | Array of contact message objects          |
+| total      | number     | Total count of messages matching criteria |
+| hasMore    | boolean    | Indicates if more results are available   |
 
 ### 4.3 Message Status Update API
+
 ```
 PATCH /api/contact/message/:id
 ```
 
 Request:
-| Param Name | Param Type | isRequired | Description |
-|------------|------------|------------|-------------|
-| status | string | true | New status (read, responded, archived) |
-| notes | string | false | Internal admin notes about the message |
+
+| Param Name | Param Type | isRequired | Description                            |
+| ---------- | ---------- | ---------- | -------------------------------------- |
+| status     | string     | true       | New status (read, responded, archived) |
+| notes      | string     | false      | Internal admin notes about the message |
 
 ## 5. Server Architecture Diagram
 
@@ -146,6 +164,7 @@ graph TD
 ## 6. Data Model
 
 ### 6.1 Data Model Definition
+
 ```mermaid
 erDiagram
   CONTACT_MESSAGE {
@@ -175,6 +194,7 @@ erDiagram
 ### 6.2 Data Definition Language
 
 **Contact Messages Table**
+
 ```sql
 -- Create contact_messages table
 CREATE TABLE public.contact_messages (
@@ -230,6 +250,7 @@ CREATE TRIGGER update_contact_messages_updated_at
 ```
 
 **Sample Data for Testing**
+
 ```sql
 -- Insert sample contact messages for testing
 INSERT INTO public.contact_messages (name, email, phone, subject, message, status) VALUES
@@ -242,6 +263,7 @@ INSERT INTO public.contact_messages (name, email, phone, subject, message, statu
 ### 6.3 Supabase Edge Functions
 
 **Contact Form Submission Function**
+
 ```typescript
 // supabase/functions/contact-submit/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -303,6 +325,7 @@ serve(async (req) => {
 ```
 
 **Contact Messages Retrieval Function**
+
 ```typescript
 // supabase/functions/contact-messages/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -365,3 +388,4 @@ serve(async (req) => {
   }
 })
 ```
+

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';
+import SkeletonProductCard from '../components/SkeletonProductCard';
 import { Filter, X, ChevronDown } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
@@ -304,10 +305,10 @@ export default function ShopPage() {
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="lg:hidden premium-btn flex items-center gap-2"
+            className="lg:hidden flex items-center premium-btn-white"
           >
-            <Filter className="w-5 h-5" />
-            <span className="font-semibold">Filters</span>
+            <Filter className="w-5 h-5"/>
+            <span className=" w-full">Filters</span>
             {activeFilterCount > 0 && (
               <span className="ml-1 bg-white/90 text-teal-700 text-xs px-2 py-0.5 rounded-full font-bold">
                 {activeFilterCount}
@@ -636,7 +637,7 @@ export default function ShopPage() {
 
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="premium-btn flex-1"
+                  className="premium-btn-white flex-1"
                 >
                   Show {filteredProducts.length} Products
                 </button>
@@ -717,11 +718,10 @@ export default function ShopPage() {
             </div>
 
             {loading ? (
-              <div className="flex justify-center py-12">
-                <div 
-                  className="animate-spin rounded-full h-12 w-12 border-b-2"
-                  style={{ borderColor: '#14b8a6' }}
-                ></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonProductCard key={i} />
+                ))}
               </div>
             ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -750,7 +750,7 @@ export default function ShopPage() {
                 <p className="text-gray-500 text-lg">No products match your filters</p>
                 <button
                   onClick={clearFilters}
-                  className="premium-btn"
+                  className="premium-btn-white"
                 >
                   Clear All Filters
                 </button>

@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
             </p>
 
             {/* DEMO RESET LINK */}
-            {resetToken && (
+            {/* {resetToken && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-yellow-800 mb-2 font-medium">
                   Demo Mode:
@@ -80,14 +80,12 @@ export default function ForgotPasswordPage() {
                   Reset Password Link
                 </Link>
               </div>
-            )}
+            )} */}
 
             {/* BACK TO LOGIN */}
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 text-[var(--primary)] hover:underline font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
+              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
               Back to Login
             </Link>
 

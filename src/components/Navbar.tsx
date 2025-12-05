@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, Heart } from 'lucide-react';
+import { wishlistEvents } from '../utils/wishlistEvents';
 import { AuthContext } from '../App';
 import { cartEvents } from '../utils/cartEvents';
 import logo from "../assets/logo-r.png";
@@ -19,6 +20,7 @@ export function Navbar() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
     if (user && accessToken) {
@@ -26,6 +28,10 @@ export function Navbar() {
       const unsubscribe = cartEvents.subscribe(() => {
         fetchCartCount();
       });
+      fetchWishlistCount();
+      const unWish = wishlistEvents.subscribe(() => fetchWishlistCount());
+      const onFocus = () => fetchWishlistCount();
+      window.addEventListener('visibilitychange', onFocus);
       return unsubscribe;
     }
   }, [user, accessToken]);
@@ -55,6 +61,20 @@ export function Navbar() {
       setCartCount(count);
     } catch (error) {
       console.error('Cart count error:', error);
+    }
+  };
+
+  const fetchWishlistCount = async () => {
+    try {
+      const response = await fetch(
+        `https://wievhaxedotrhktkjupg.supabase.co/functions/v1/make-server-52d68140/wishlist`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const data = await response.json();
+      const count = (data.wishlist?.items?.length) || 0;
+      setWishlistCount(count);
+    } catch (error) {
+      console.error('Wishlist count error:', error);
     }
   };
 
@@ -122,6 +142,18 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
+            <Link
+              to="/shop-by-videos"
+              className="rounded-full px-4 py-2 text-sm"
+              style={{
+                backgroundColor: isActive('/shop-by-videos') ? 'white' : '#e9e5dc',
+                color: '#1f2937',
+                boxShadow: isActive('/shop-by-videos') ? '0 0 0 2px #14b8a6' : 'none',
+                fontWeight: 600,
+              }}
+            >
+              Shop by Videos
+            </Link>
             
             {/* Decor by Room Dropdown */}
             {/* <div
@@ -211,6 +243,16 @@ export function Navbar() {
 
           {/* Right Side Icons */}
           <div className="flex items-center space-x-4 relative" style={{ zIndex: 50 }}>
+
+            {/* Wishlist Icon */}
+            <Link to="/wishlist" className="text-gray-700 relative transition">
+              <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/2 min-w-[1.25rem] h-5 px-1.5 text-[10px] rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-white z-10 bg-[#14b8a6] text-black">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
+            </Link>
 
             {/* Cart Icon */}
             <Link 
@@ -342,7 +384,7 @@ export function Navbar() {
             </Link>
 
             {/* Decor by Room - Mobile Collapsible */}
-            <div className="py-2">
+            {/* <div className="py-2">
               <button
                 onClick={() => setShowMobileDecorDropdown(!showMobileDecorDropdown)}
                 className="w-full flex items-center justify-between text-gray-700 font-semibold transition hover:text-teal-600"
@@ -418,7 +460,7 @@ export function Navbar() {
                 </Link>
               </div>
               )}
-            </div>
+            </div> */}
 
             <Link
               to="/about"
@@ -439,6 +481,27 @@ export function Navbar() {
               onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
             >
               Gallery
+            </Link>
+            <Link
+              to="/shop-by-videos"
+              className="block text-gray-700 py-2 transition"
+              style={{ fontWeight: 500 }}
+              onClick={() => setIsMenuOpen(false)}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
+            >
+              Shop by Videos
+            </Link>
+
+            <Link
+              to="/contact"
+              className="block text-gray-700 py-2 transition"
+              style={{ fontWeight: 500 }}
+              onClick={() => setIsMenuOpen(false)}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#374151'}
+            >
+              Contact
             </Link>
 
             {/* Profile Section - Mobile Collapsible */}

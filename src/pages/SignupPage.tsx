@@ -1,12 +1,15 @@
 import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { toast } from 'sonner';
 import logo from "../assets/logo.png";
+import { Navbar } from '../components/Navbar';
+import { Footer } from '../components/Footer';
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { signup } = useContext(AuthContext);
+  const { signup, googleLogin } = useContext(AuthContext);
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -32,7 +35,9 @@ export default function SignupPage() {
     try {
       await signup(formData.email, formData.password, formData.name);
       toast.success('Account created successfully!');
-      navigate('/');
+      const redirect = (location.state as any)?.redirect || localStorage.getItem('redirectAfterLogin') || '/';
+      localStorage.removeItem('redirectAfterLogin');
+      navigate(redirect, { replace: true });
     } catch (error: any) {
       toast.error(error.message || 'Signup failed');
     } finally {
@@ -40,11 +45,20 @@ export default function SignupPage() {
     }
   };
 
+  React.useEffect(() => {
+    const state = location.state as any;
+    if (state?.redirect) {
+      localStorage.setItem('redirectAfterLogin', state.redirect);
+    }
+  }, [location.state]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen about-theme content-offset">
+      <Navbar />
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex items-center justify-center">
 
       {/* CARD */}
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+      <div className="soft-card rounded-2xl p-8 w-full max-w-md">
 
         {/* LOGO */}
         <div className="text-center mb-8">
@@ -55,9 +69,7 @@ export default function SignupPage() {
             </span>
           </Link>
 
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Create your account
-          </h1>
+          <h1 className="section-title">Create your account</h1>
         </div>
 
         {/* FORM */}
@@ -72,7 +84,7 @@ export default function SignupPage() {
               value={formData.name}
               onChange={update}
               required
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
             />
           </div>
 
@@ -85,7 +97,7 @@ export default function SignupPage() {
               value={formData.email}
               onChange={update}
               required
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
             />
           </div>
 
@@ -98,7 +110,7 @@ export default function SignupPage() {
               value={formData.password}
               onChange={update}
               required
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
             />
           </div>
 
@@ -111,22 +123,27 @@ export default function SignupPage() {
               value={formData.confirmPassword}
               onChange={update}
               required
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 focus:ring-2 focus:ring-[var(--primary)] focus:outline-none transition"
             />
           </div>
 
           {/* BUTTON */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl text-white font-medium transition"
-            style={{
-              backgroundColor: loading ? '#9ca3af' : '#14b8a6',
-            }}
-          >
+          <button type="submit" disabled={loading} className="premium-btn-white w-full">
             {loading ? 'Creating account…' : 'Sign Up'}
           </button>
         </form>
+
+        {/* <div className="mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-gray-500 text-sm">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+          <button type="button" onClick={googleLogin} className="premium-btn-white w-full flex items-center justify-center gap-2">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+            Continue with Google
+          </button>
+        </div> */}
 
         {/* FOOTER */}
         <div className="mt-6 text-center">
@@ -143,6 +160,8 @@ export default function SignupPage() {
         </div>
 
       </div>
+      </section>
+      <Footer />
     </div>
   );
 }
