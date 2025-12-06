@@ -50,10 +50,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [heroApi, setHeroApi] = useState<CarouselApi | null>(null);
   const heroImages = [
-    heroImage,
-    image1,
-    image2,
-    image3,
+    
+      
+  
     image4,
     image5,
     
@@ -636,11 +635,10 @@ const scrollBestSellerRight = () => {
               <Carousel opts={{ loop: true, align: "center", slidesToScroll: 1 }} setApi={setTestApi} className="w-full overflow-hidden testimonial-carousel">
                 <CarouselContent className="ml-0 gap-6">
                   {testimonials.map((t) => (
-                    <CarouselItem className="pl-0 flex-none w-1/3">
-
+                    <CarouselItem className="pl-0 flex-none w-full sm:w-1/2 lg:w-1/3">
                       <div className="soft-card p-6 rounded-2xl bg-white border hover:shadow-lg transition mx-2" data-aos="fade-up">
                         <div className="flex items-start mb-4">
-                          <img src={t.profileImage || ''} alt={t.name} className="w-12 h-12 rounded-full object-cover mr-3 bg-gray-100 flex-shrink-0" />
+                          <img src={t.profileImage || ''} alt={t.name} loading="lazy" decoding="async" className="w-12 h-12 rounded-full object-cover mr-3 bg-gray-100 flex-shrink-0 img-fade" />
                           <div className="flex-1">
                             <p className="text-gray-900 text-base font-semibold">{t.name}</p>
                             <div className="flex mt-1">

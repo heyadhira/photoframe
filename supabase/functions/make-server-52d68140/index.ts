@@ -1379,6 +1379,95 @@ app.put('/make-server-52d68140/gallery/:id', async (c) => {
   }
 });
 
+// Upload video via service role (base64) to storage
+app.post('/make-server-52d68140/videos/upload', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+
+    const body = await c.req.json();
+    const base64 = String(body?.video || '');
+    const fileName = String(body?.fileName || 'video.mp4');
+    const mimeType = String(body?.mimeType || 'video/mp4');
+    if (!base64) return c.json({ error: 'video required' }, 400);
+
+    // simple size guard (~ bytes from base64 length)
+    const approxBytes = Math.floor((base64.length * 3) / 4);
+    if (approxBytes > 10 * 1024 * 1024) return c.json({ error: 'Video exceeds 10MB' }, 413);
+
+    const dataPart = base64.replace(/^data:.*?;base64,/, '');
+    const buffer = Uint8Array.from(atob(dataPart), (c) => c.charCodeAt(0));
+    const path = `videos/${Date.now()}-${fileName}`;
+    const { error: vErr } = await supabase.storage.from('make-52d68140-gallery').upload(path, buffer, { contentType: mimeType, upsert: false });
+    if (vErr) return c.json({ error: vErr.message || 'Upload failed' }, 400);
+    const { data } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(path);
+    return c.json({ success: true, url: data.publicUrl, path });
+  } catch (e) {
+    console.log('Video upload error', e);
+    return c.json({ error: 'Upload failed' }, 500);
+  }
+});
+// =============================
+// Instagram feed (admin-managed)
+// =============================
+function normalizeInstagramEmbed(url: string): string {
+  try {
+    const u = new URL(url);
+    // Handle post types: /p/{id}/, /reel/{id}/, /tv/{id}/
+    const parts = u.pathname.split('/').filter(Boolean);
+    const type = parts[0];
+    const id = parts[1];
+    if (!id) return url;
+    return `https://www.instagram.com/${type}/${id}/embed`;
+  } catch {
+    return url;
+  }
+}
+
+app.get('/make-server-52d68140/instagram', async (c) => {
+  try {
+    const list = await (kv as any).getKeysByPrefix('instagram:');
+    const items = (list || []).map((p: any) => p.value).filter(Boolean);
+    return c.json({ items });
+  } catch (e) {
+    return c.json({ items: [], error: 'Failed' }, 500);
+  }
+});
+
+app.post('/make-server-52d68140/instagram', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const body = await c.req.json();
+    const rawUrl = String(body?.url || '');
+    if (!rawUrl) return c.json({ error: 'url required' }, 400);
+    const embedUrl = normalizeInstagramEmbed(rawUrl);
+    const id = Date.now().toString();
+    const item = { id, url: rawUrl, embedUrl, createdAt: new Date().toISOString() };
+    await kv.set(`instagram:${id}`, item);
+    return c.json({ success: true, item });
+  } catch (e) {
+    return c.json({ error: 'Failed to add' }, 500);
+  }
+});
+
+app.delete('/make-server-52d68140/instagram/:id', async (c) => {
+  try {
+    const user = await verifyAuth(c.req.raw);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+    const profile = await kv.get(`user:${user.id}`);
+    if (!profile || profile.role !== 'admin') return c.json({ error: 'Admin access required' }, 403);
+    const id = c.req.param('id');
+    await kv.del(`instagram:${id}`);
+    return c.json({ success: true });
+  } catch (e) {
+    return c.json({ error: 'Failed to delete' }, 500);
+  }
+});
 app.delete('/make-server-52d68140/gallery/:id', async (c) => {
   try {
     const user = await verifyAuth(c.req.raw);
@@ -1941,14 +2030,18 @@ app.post('/make-server-52d68140/admin/cleanup', async (c) => {
 
     const body = await c.req.json().catch(() => ({}));
     const includeUsers = !!body?.includeUsers;
+    const onlyPrefixes: string[] = Array.isArray(body?.prefixes) ? body.prefixes : [];
 
-    const prefixes = [
+    let prefixes = [
       'product:', 'order:', 'cart:', 'wishlist:',
       'testimonial:', 'gallery:', 'faq:', 'contact:',
       'video:', 'video-like:', 'video-comment:',
       'notification:', 'payment:', 'reset:', 'reset-email:'
     ];
     if (includeUsers) prefixes.push('user:');
+    if (onlyPrefixes.length > 0) {
+      prefixes = prefixes.filter(p => onlyPrefixes.includes(p));
+    }
 
     const result: Record<string, number> = {};
     for (const p of prefixes) {

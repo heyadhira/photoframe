@@ -5,6 +5,7 @@ import { wishlistEvents } from '../utils/wishlistEvents';
 import { AuthContext } from '../context/AuthContext';
 import { cartEvents } from '../utils/cartEvents';
 import logo from "../assets/logo-r.png";
+import { TopMarquee } from "./TopMarquee";
 
 
 export function Navbar() {
@@ -90,6 +91,8 @@ export function Navbar() {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 pb-2 ${transparent ? '' : 'shadow-sm'}`} style={{ backgroundColor: transparent ? 'transparent' : '#ffffff', borderBottom: transparent ? 'none' : '1px solid #e5e7eb' }}>
+    <>
+      <TopMarquee />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -283,7 +286,7 @@ export function Navbar() {
                 {/* Dropdown Menu */}
                 <div
                   className="absolute right-50px top-1/2 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden group-hover:block"
-                  style={{ border: '1px solid #e5e7eb', zIndex: 60 }}
+                  style={{ border: '1px solid #e5e7eb', zIndex: 100 }}
                 >
                   <Link
                     to="/account"
@@ -351,17 +354,18 @@ export function Navbar() {
               className="md:hidden text-gray-700"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMenuOpen ? <X className="w-6 h-6 bg-white z-50" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div 
-            className="md:hidden py-4 space-y-3"
-            style={{ borderTop: '1px solid #e5e7eb' }}
-          >
+          <div
+  className="md:hidden py-4  px-6 space-y-3"
+  style={{ borderTop: '1px solid #e5e7eb', zIndex: 1000, backgroundColor: '#ffffff', position: 'relative' }}
+>
+
             <Link
               to="/"
               className="block text-gray-700 py-2 transition"
@@ -606,6 +610,7 @@ export function Navbar() {
           </div>
         )}
       </div>
+    </>
     </nav>
   );
 }

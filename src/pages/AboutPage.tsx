@@ -7,6 +7,12 @@ import canvaImg from "../assets/canva.jpg";
 import heroImg from "../assets/hero.jpg";
 import lordramaImg from "../assets/lordrama.jpg";
 import owlImg from "../assets/owl.jpg";
+import image1 from "../assets/1.jpg";
+import image2 from "../assets/2.jpg";
+import image3 from "../assets/3.jpg";
+import image4 from "../assets/4.jpg";
+import logor  from  "../assets/logo.png"
+
 
 
 
@@ -168,7 +174,7 @@ export default function AboutPage() {
       {/* RIGHT IMAGES */}
       <div className="soft-card p-6 hover-lift">
         <div className="grid grid-cols-2 gap-4">
-          {[canvaImg, heroImg, heroImg, owlImg].map((src, i) => (
+          {[image2, image1, image3, image4].map((src, i) => (
             <div key={i} className="overflow-hidden rounded-xl premium-shadow">
               <img
                 src={src}
@@ -200,7 +206,7 @@ export default function AboutPage() {
        {/* left IMAGES */}
       <div className="soft-card p-6 hover-lift">
         <div className="grid grid-cols-2 gap-4">
-          {[canvaImg, owlImg].map((src, i) => (
+          {[heroImg,logor].map((src, i) => (
             <div key={i} className="overflow-hidden rounded-xl premium-shadow">
               <img
                 src={src}

@@ -27,19 +27,7 @@ const LAYOUT_OPTIONS = ['Portrait', 'Square', 'Landscape'];
 const SIZE_OPTIONS = ['8×12', '12×18', '18×24', '20×30', '24×36', '30×40', '36×48', '48×66', '18×18', '24×24', '36×36', '20×20', '30×30'];
 const COLOR_OPTIONS = ['White', 'Black', 'Brown'];
 const MATERIAL_OPTIONS = ['Wood', 'Metal', 'Plastic', 'Glass'];
-const CATEGORY_OPTIONS = [
-  { name: 'Home Decor', count: 3 },
-  { name: 'Wall Art', count: 5 },
-  { name: 'Bestselling', count: 7 },
-  { name: 'Hot & Fresh', count: 4 },
-  { name: 'Gen Z', count: 7 },
-  { name: 'Graffiti Art', count: 2 },
-  { name: 'Modern Art', count: 4 },
-  { name: 'Animal', count: 2 },
-  { name: 'Pop Art', count: 2 },
-  { name: 'Black & White', count: 1 },
-  { name: 'Spiritual', count: 1 },
-];
+// CATEGORY_OPTIONS now computed dynamically from products
 
 interface Product {
   id: string;
@@ -74,6 +62,9 @@ export default function ShopPage() {
     materials: true,
     categories: true,
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 9;
 
   const [filters, setFilters] = useState({
     rooms: [] as string[],
@@ -193,6 +184,17 @@ export default function ShopPage() {
 
   const roomCounts = getRoomCounts();
 
+  const getCategoryCounts = () => {
+    const counts: { [key: string]: number } = {};
+    products.forEach(p => {
+      const cat = p.category || '';
+      if (cat) counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  };
+  const categoryCounts = getCategoryCounts();
+  const categoryNames = Object.keys(categoryCounts).sort();
+
   const applyFilters = () => {
     let result = [...products];
 
@@ -242,6 +244,7 @@ export default function ShopPage() {
     }
 
     setFilteredProducts(result);
+    setCurrentPage(1);
   };
 
   const toggleFilter = (filterType: string, value: string) => {
@@ -335,7 +338,7 @@ export default function ShopPage() {
 
             {/* Filter Panel */}
             <div
-              className="lg:w-64 bg-white rounded-t-3xl lg:rounded-lg shadow-2xl lg:shadow-sm fixed lg:static bottom-0 left-0 right-0 lg:inset-auto max-h-[90vh] lg:max-h-none overflow-y-auto no-scrollbar flex flex-col"
+              className="lg:w-64 bg-white rounded-3xl shadow-2xl lg:shadow-sm fixed lg:static left-0 right-0 lg:inset-auto overflow-y-auto flex flex-col touch-pan-y mobile-filter-panel"
               style={{ overscrollBehavior: 'contain' }}
             >
               {/* Header */}
@@ -365,6 +368,78 @@ export default function ShopPage() {
 
               {/* Scrollable Content */}
               <div className="overflow-y-auto flex-1 p-6 custom-scrollbar">
+
+              {/* Category Filter */}
+              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
+                <button
+                  onClick={() => toggleSection('categories')}
+                  className="flex items-center justify-between w-full mb-3 transition"
+                  style={{ fontWeight: 700, color: '#1f2937' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#1f2937'}
+                >
+                  <h3>Categories</h3>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${expandedSections.categories ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {expandedSections.categories && (
+                  <div className="space-y-2">
+                    {categoryNames.map(name => (
+                      <label key={name} className="flex items-center justify-between cursor-pointer group">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={filters.categories.includes(name)}
+                            onChange={() => toggleFilter('categories', name)}
+                            className="mr-2"
+                            style={{ accentColor: '#14b8a6' }}
+                          />
+                          <span className="text-gray-700 text-sm group-hover:text-teal-600 transition">
+                            {name}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">({categoryCounts[name] || 0})</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Layout Filter */}
+              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
+                <button
+                  onClick={() => toggleSection('layout')}
+                  className="flex items-center justify-between w-full mb-3 transition"
+                  style={{ fontWeight: 700, color: '#1f2937' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'bg-teal'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#1f2937'}
+                >
+                  <h3>Layout</h3>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${expandedSections.layout ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {expandedSections.layout && (
+                  <div className="flex flex-wrap gap-2">
+                    {LAYOUT_OPTIONS.map(layout => (
+                      <button
+                        key={layout}
+                        onClick={() => toggleFilter('layouts', layout)}
+                        className="px-4 py-2.5 rounded-lg border-2 text-sm transition-all transform active:scale-95"
+                        style={{
+                          backgroundColor: filters.layouts.includes(layout) ? '#14b8a6' : 'white',
+                          color: filters.layouts.includes(layout) ? 'white' : '#374151',
+                          borderColor: filters.layouts.includes(layout) ? '#14b8a6' : '#d1d5db',
+                          fontWeight: 600
+                        }}
+                      >
+                        {layout}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Room Filter */}
               <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
@@ -406,43 +481,9 @@ export default function ShopPage() {
                 )}
               </div>
 
-              {/* Layout Filter */}
-              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
-                <button
-                  onClick={() => toggleSection('layout')}
-                  className="flex items-center justify-between w-full mb-3 transition"
-                  style={{ fontWeight: 700, color: '#1f2937' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#1f2937'}
-                >
-                  <h3>Layout</h3>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${expandedSections.layout ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                {expandedSections.layout && (
-                  <div className="flex flex-wrap gap-2">
-                    {LAYOUT_OPTIONS.map(layout => (
-                      <button
-                        key={layout}
-                        onClick={() => toggleFilter('layouts', layout)}
-                        className="px-5 py-2.5 rounded-xl border-2 text-sm transition-all transform active:scale-95"
-                        style={{
-                          backgroundColor: filters.layouts.includes(layout) ? '#14b8a6' : 'white',
-                          color: filters.layouts.includes(layout) ? 'white' : '#374151',
-                          borderColor: filters.layouts.includes(layout) ? '#14b8a6' : '#d1d5db',
-                          fontWeight: 600
-                        }}
-                      >
-                        {layout}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
+              
               {/* Size Filter */}
-              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
+              {/* <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
                 <button
                   onClick={() => toggleSection('size')}
                   className="flex items-center justify-between w-full mb-3 transition"
@@ -474,10 +515,10 @@ export default function ShopPage() {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Color Filter */}
-              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
+              {/* <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
                 <button
                   onClick={() => toggleSection('colors')}
                   className="flex items-center justify-between w-full mb-3 transition"
@@ -509,10 +550,10 @@ export default function ShopPage() {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Material Filter */}
-              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
+              {/* <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
                 <button
                   onClick={() => toggleSection('materials')}
                   className="flex items-center justify-between w-full mb-3 transition"
@@ -543,44 +584,9 @@ export default function ShopPage() {
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
-              {/* Category Filter */}
-              <div className="mb-6 pb-6 border-b" style={{ borderColor: '#e5e7eb' }}>
-                <button
-                  onClick={() => toggleSection('categories')}
-                  className="flex items-center justify-between w-full mb-3 transition"
-                  style={{ fontWeight: 700, color: '#1f2937' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#14b8a6'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#1f2937'}
-                >
-                  <h3>Categories</h3>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${expandedSections.categories ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                {expandedSections.categories && (
-                  <div className="space-y-2">
-                    {CATEGORY_OPTIONS.map(cat => (
-                      <label key={cat.name} className="flex items-center justify-between cursor-pointer group">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={filters.categories.includes(cat.name)}
-                            onChange={() => toggleFilter('categories', cat.name)}
-                            className="mr-2"
-                            style={{ accentColor: '#14b8a6' }}
-                          />
-                          <span className="text-gray-700 text-sm group-hover:text-teal-600 transition">
-                            {cat.name}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-500">({cat.count})</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+              
 
               {/* Price Range */}
               <div className="mb-6">
@@ -724,27 +730,65 @@ export default function ShopPage() {
                 ))}
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(filteredProducts.filter(p => {
-                  const byFormat = formatSubsection === 'All' ? true : (p.format === formatSubsection);
-                  const bySubsection = subsectionChip === 'All' ? true : (p.subsection === subsectionChip);
-                  return byFormat && bySubsection;
-                })).map(product => {
-                  const chosenSize = filters.sizes[0] || '';
-                  const effectiveSubsection = subsectionChip === 'All' ? (product.subsection || 'Basic') : subsectionChip;
-                  const overridePrice =
-                    formatSubsection !== 'All' && chosenSize
-                      ? computePriceFor(
-                          chosenSize,
-                          formatSubsection as 'Rolled' | 'Canvas' | 'Frame',
-                          effectiveSubsection as 'Basic' | '2-Set' | '3-Set' | 'Square'
-                        )
-                      : undefined;
+              <>
+                {(() => {
+                  const filteredList = filteredProducts.filter(p => {
+                    const byFormat = formatSubsection === 'All' ? true : (p.format === formatSubsection);
+                    const bySubsection = subsectionChip === 'All' ? true : (p.subsection === subsectionChip);
+                    return byFormat && bySubsection;
+                  });
+                  const total = filteredList.length;
+                  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+                  const start = (currentPage - 1) * PAGE_SIZE;
+                  const pageItems = filteredList.slice(start, start + PAGE_SIZE);
                   return (
-                    <ProductCard key={product.id} product={product} overridePrice={overridePrice} />
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pageItems.map(product => {
+                          const chosenSize = filters.sizes[0] || '';
+                          const effectiveSubsection = subsectionChip === 'All' ? (product.subsection || 'Basic') : subsectionChip;
+                          const overridePrice =
+                            formatSubsection !== 'All' && chosenSize
+                              ? computePriceFor(
+                                  chosenSize,
+                                  formatSubsection as 'Rolled' | 'Canvas' | 'Frame',
+                                  effectiveSubsection as 'Basic' | '2-Set' | '3-Set' | 'Square'
+                                )
+                              : undefined;
+                          return <ProductCard key={product.id} product={product} overridePrice={overridePrice} eyeNavigates />;
+                        })}
+                      </div>
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-8">
+                          <button
+                            className="px-3 py-2 rounded-lg border"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Prev
+                          </button>
+                          {Array.from({ length: totalPages }).map((_, i) => (
+                            <button
+                              key={i}
+                              className={`px-3 py-2 rounded-lg border ${currentPage === i + 1 ? 'bg-teal text-white border-[#14b8a6]' : ''}`}
+                              onClick={() => setCurrentPage(i + 1)}
+                            >
+                              {i + 1}
+                            </button>
+                          ))}
+                          <button
+                            className="px-3 py-2 rounded-lg border"
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            disabled={currentPage >= totalPages}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
+                    </>
                   );
-                })}
-              </div>
+                })()}
+              </>
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-500 text-lg">No products match your filters</p>

@@ -114,6 +114,21 @@ const getDriveDirectVideoUrl = (url: string) => {
     return () => observer.disconnect();
   }, [videos]);
 
+  // Kickstart autoplay for first visible item on mount
+  useEffect(() => {
+    if (loading) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const first = el.querySelector('.sbv-card') as HTMLElement | null;
+    if (!first) return;
+    const v = first.querySelector('video') as HTMLVideoElement | null;
+    const y = first.querySelector('iframe') as HTMLIFrameElement | null;
+    if (v) { v.muted = true; v.play().catch(()=>{}); }
+    if (y && /youtube\.com\/embed/.test(y.src)) {
+      try { y.contentWindow?.postMessage(JSON.stringify({ event:'command', func:'playVideo', args:[] }), '*'); } catch {}
+    }
+  }, [loading]);
+
   const toggleLike = async (id: string) => {
     try {
       if (!user) return toast.error('Login to like');

@@ -73,18 +73,15 @@ export default function AdminVideos() {
           return toast.error('Video is too large. Max size is 10MB.');
         }
         setUploading(true);
-        const path = `videos/${Date.now()}-${videoFile.name}`;
-        const { error: vErr } = await supabase.storage
-          .from('make-52d68140-gallery')
-          .upload(path, videoFile, { contentType: videoFile.type, upsert: false });
-        if (vErr) {
-          setUploading(false);
-          const msg = (vErr.message || 'Video upload failed');
-          return toast.error(`${msg}. For larger files, upload to Google Drive and paste the file link.`);
-        }
-        const { data } = supabase.storage.from('make-52d68140-gallery').getPublicUrl(path);
-        videoUrl = data.publicUrl;
+        const toBase64 = (f: File) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = rej; r.readAsDataURL(f); });
+        const base64 = await toBase64(videoFile);
+        const up = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/videos/upload`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ video: base64, fileName: videoFile.name, mimeType: videoFile.type })
+        });
+        const ud = await up.json();
         setUploading(false);
+        if (!up.ok) return toast.error(ud.error || 'Upload failed');
+        videoUrl = ud.url;
       }
       if (!videoUrl && form.url) {
         // Validate Google Drive links: must be a file link (contains /file/d/<id> or ?id=)
@@ -148,17 +145,17 @@ export default function AdminVideos() {
         <h1 className="section-title mb-6"><span className="text-[#3b2f27]">Shop by</span> <span style={{ color: '#14b8a6' }}>Videos</span></h1>
 
         {/* Create */}
-        <div className="soft-card rounded-2xl p-6 mb-8">
+        <div className="soft-card rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Add Video</h2>
           <div className="mb-3">
-            <a href="https://drive.google.com/drive/folders/1H6JXi-VX7-uIIX1rplfbO0ffyZuo3Aub?usp=sharing" target="_blank" rel="noopener noreferrer" className="premium-btn-white">Open Google Drive Folder</a>
-            <span className="ml-3 text-sm text-gray-600">Paste file link below if you upload to Drive.</span>
+            <a href="https://drive.google.com/drive/folders/1H6JXi-VX7-uIIX1rplfbO0ffyZuo3Aub?usp=sharing" target="_blank" rel="noopener noreferrer" className="premium-btn-white px-6 py-2 rounded-lg">Open Google Drive Folder</a>
+            <span className="ml-3 text-sm text-gray-600"><br /> <br />Paste file link below if you upload to Drive.</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <input value={form.title} onChange={e=>setForm({...form, title:e.target.value})} placeholder="Title" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <div>
               <label className="text-sm text-gray-600">Upload Video</label>
-              <input type="file" accept="video/*" onChange={(e)=>{ const f=e.target.files?.[0]||null; setVideoFile(f); setVideoPreview(f?URL.createObjectURL(f):''); }} className="w-full" />
+              <input type="file" accept="video/*" onChange={(e)=>{ const f=e.target.files?.[0]||null; setVideoFile(f); setVideoPreview(f?URL.createObjectURL(f):''); }} className="w-full b-2px solid black" />
               {videoPreview && <video src={videoPreview} controls className="mt-2 w-40 h-24 rounded" />}
               {uploading && (
                 <div className="mt-2 flex items-center gap-2 text-gray-700">
@@ -168,7 +165,7 @@ export default function AdminVideos() {
               )}
               <p className="text-xs text-gray-500 mt-1">Max 10MB. For larger videos, upload to Google Drive and paste the link below.</p>
             </div>
-            <input value={form.url} onChange={e=>setForm({...form, url:e.target.value})} placeholder="Or paste Video URL (YouTube / Google Drive / MP4)" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
+            <input value={form.url} onChange={e=>setForm({...form, url:e.target.value})} placeholder="Or paste Video URL (YouTube / Google Drive / MP4)" className="border border-gray-300 rounded-lg px-6 py-2 bg-white" />
             <input value={form.caption} onChange={e=>setForm({...form, caption:e.target.value})} placeholder="Caption (optional)" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <input type="number" value={form.order || 0} onChange={e=>setForm({...form, order: Number(e.target.value)})} placeholder="Order" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
             <input value={productId} onChange={e=>setProductId(e.target.value)} placeholder="Related Product ID (optional)" className="border border-gray-300 rounded-lg px-3 py-2 bg-white" />
@@ -179,8 +176,8 @@ export default function AdminVideos() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-3">
-            <button onClick={createVideo} className="premium-btn" disabled={uploading}>{uploading ? 'Uploading…' : 'Create'}</button>
-            <button onClick={()=>{ setForm({ id:'', title:'', url:'', caption:'', thumbnail:'', order:0 }); setVideoFile(null); setVideoPreview(''); setThumbFile(null); setThumbPreview(''); }} className="premium-btn-white">Clear</button>
+            <button onClick={createVideo} className="premium-btn py-2 px-4 rounded-lg" disabled={uploading}>{uploading ? 'Uploading…' : 'Create'}</button>
+            <button onClick={()=>{ setForm({ id:'', title:'', url:'', caption:'', thumbnail:'', order:0 }); setVideoFile(null); setVideoPreview(''); setThumbFile(null); setThumbPreview(''); }} className="premium-btn premium-btn py-2 px-4 rounded-lg">Clear</button>
           </div>
         </div>
 
@@ -203,7 +200,7 @@ export default function AdminVideos() {
                 </div>
                 <textarea defaultValue={v.caption || ''} onBlur={(e)=>updateVideo(v.id, { caption: e.target.value })} className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 bg-white" />
                 <div className="mt-2 flex justify-end gap-2">
-                  <button onClick={()=>deleteVideo(v.id)} className="premium-btn-white text-red-600">Delete</button>
+                  <button onClick={()=>deleteVideo(v.id)} className="premium-btn py-2 px-4 rounded-lg">Delete</button>
                 </div>
               </div>
             ))}

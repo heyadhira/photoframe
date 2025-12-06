@@ -39,9 +39,11 @@ import RefundsPage from './pages/RefundsPage';
 import WishlistPage from './pages/WishlistPage';
 import ShopByVideosPage from './pages/ShopByVideosPage';
 import AdminVideos from './pages/admin/AdminVideos';
+import AdminInstagram from './pages/admin/AdminInstagram';
 import DecorByRoomPage from './pages/DecorByRoomPage';
 import ContactUsPage from './pages/ContactUsPage';
 import { WhatsappButton } from './components/WhatsappButton';
+import { CookieConsent } from './components/CookieConsent';
 import { AuthContext, AuthContextType, User } from './context/AuthContext';
 
 
@@ -52,7 +54,7 @@ const supabase = createClient(
   {
     auth: {
       persistSession: true,
-      autoRefreshToken: false,
+      autoRefreshToken: true,
     },
   }
 );
@@ -65,7 +67,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try { localStorage.removeItem(`sb-${projectId}-auth-token`); } catch {}
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.access_token) {
         setAccessToken(session.access_token);
@@ -276,10 +277,15 @@ function App() {
             path="/admin/videos"
             element={user?.role === 'admin' ? <AdminVideos /> : <Navigate to="/login" />}
           />
+          <Route
+            path="/admin/instagram"
+            element={user?.role === 'admin' ? <AdminInstagram /> : <Navigate to="/login" />}
+          />
         </Routes>
         <WhatsappButton />
       </BrowserRouter>
       <Toaster position="top-right" />
+      <CookieConsent />
     </AuthContext.Provider>
   );
 }

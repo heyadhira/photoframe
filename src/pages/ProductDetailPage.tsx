@@ -494,7 +494,7 @@ export default function ProductDetailPage() {
                       onClick={() => setSelectedSize(size)}
                       className={`px-6 py-2 rounded-lg border-2 transition ${
                         selectedSize === size
-                          ? 'border-teal-500 bg-teal-50 text-teal-600'
+                          ? 'border-teal-500 bg-teal text-white'
                           : 'border-gray-300 text-gray-700'
                       }`}
                     >

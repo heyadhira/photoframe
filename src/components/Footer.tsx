@@ -6,44 +6,59 @@ import logoImage from "../assets/logo-r.png";
 
 export function Footer() {
   return (
-    <footer className="mt-20" style={{ backgroundColor: '#e7dfd0', color: '#1f2937' }}>
+    <footer style={{ backgroundColor: '#d1cfc8ff', color: '#3b2f27' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
-          {/* logo */}
-          <div className="flex items-center md:block">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 items-start">
+          <div className="flex flex-col md:items-start gap-4">
             <Link to="/" className="flex items-center gap-3">
               <img src={logoImage} alt="Decorizz" className="h-10 w-auto" />
               <span className="text-xl tracking-wide" style={{ fontWeight: 800 }}>DECORIZZ</span>
             </Link>
+            <p className="text-sm text-gray-700 max-w-sm">Premium wall frames and artwork crafted to elevate modern spaces.</p>
+            <div className="flex gap-3">
+              <a href="#" aria-label="Facebook" className="w-10 h-10 rounded-full border flex items-center justify-center" style={{ borderColor: '#14b8a6', color: '#14b8a6' }}><Facebook className="w-5 h-5" /></a>
+              <a href="#" aria-label="Instagram" className="w-10 h-10 rounded-full border flex items-center justify-center" style={{ borderColor: '#14b8a6', color: '#14b8a6' }}><Instagram className="w-5 h-5" /></a>
+              <a href="#" aria-label="Twitter" className="w-10 h-10 rounded-full border flex items-center justify-center" style={{ borderColor: '#14b8a6', color: '#14b8a6' }}><Twitter className="w-5 h-5" /></a>
+            </div>
+
+            {/* Newsletter */}
+            <div className="mt-2 mb-2 w-full max-w-sm">
+              <p className="text-sm text-gray-700">Subscribe to get new arrivals and offers</p>
+              <div className="flex gap-2">
+                <input type="email" placeholder="Your email" className="flex-1 px-3 py-2 rounded-lg border" style={{ borderColor:'#d1d5db' }} />
+                <button className="px-4 py-2 rounded-lg text-white" style={{ backgroundColor: '#14b8a6' }}>Subscribe</button>
+              </div>
+            </div>
           </div>
 
-          {/* Company */}
           <div>
-            <h3 className="text-lg mb-4" style={{ color: '#0ea5a4', fontWeight: 700 }}>Company</h3>
+            <h3 className="text-lg" style={{ color: '#14b8a6', fontWeight: 700 }}>Company</h3>
             <ul className="space-y-2">
               <li><Link to="/about" className="hover:underline">About Us</Link></li>
-              <li><Link to="/shop" className="hover:underline">Products</Link></li>
+              
               <li><Link to="/shop" className="hover:underline">Frames</Link></li>
-              <li><Link to="/refunds" className="hover:underline">Refund & Returns Policy</Link></li>
-              <li><Link to="/terms" className="hover:underline">Terms & Conditions</Link></li>
-              <li><Link to="/privacy" className="hover:underline">Privacy Policy</Link></li>
-            </ul>
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h3 className="text-lg mb-4" style={{ color: '#0ea5a4', fontWeight: 700 }}>Resources</h3>
-            <ul className="space-y-2">
               <li><Link to="/gallery" className="hover:underline">Gallery</Link></li>
+              <li><Link to="/shop-by-videos" className="hover:underline">Shop by Videos</Link></li>
+              <li><Link to="/contact" className="hover:underline">Contact Us</Link></li>
             </ul>
           </div>
 
-          {/* Contact Us */}
           <div>
-            <h3 className="text-lg mb-4" style={{ color: '#0ea5a4', fontWeight: 700 }}>Contact Us</h3>
+            <h3 className="text-lg" style={{ color: '#14b8a6', fontWeight: 700 }}>Customer Care</h3>
+            <ul className="space-y-2">
+              <li><Link to="/contact" className="hover:underline">Shipping & Delivery</Link></li>
+              <li><Link to="/refunds" className="hover:underline">Returns & Refunds</Link></li>
+              <li><Link to="/contact" className="hover:underline">Track Order</Link></li>
+              <li><Link to="/terms" className="hover:underline">Terms</Link></li>
+              <li><Link to="/privacy" className="hover:underline">Privacy</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-lg" style={{ color: '#14b8a6', fontWeight: 700 }}>Contact</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0ea5a4', color: '#fff' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#14b8a6', color: '#fff' }}>
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
@@ -52,7 +67,7 @@ export function Footer() {
                 </div>
               </li>
               <li className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0ea5a4', color: '#fff' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#14b8a6', color: '#fff' }}>
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
@@ -61,12 +76,12 @@ export function Footer() {
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <div className="w-24 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0ea5a4', color: '#fff' }}>
+                <div className="w-12 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#14b8a6', color: '#fff' }}>
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-sm" style={{ fontWeight: 700 }}>Address</p>
-                  <p>Gurugram road Near Subhash chowk Shaktifarm market Sitarganj</p>
+                  
                   <p>Udham Singh Nagar 263151</p>
                 </div>
               </li>
@@ -74,7 +89,21 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10" style={{ borderTop: '1.5px solid #0ea5a4' }}></div>
+        <div className="mt-10" style={{ borderTop: '1.5px solid #14b8a6' }}></div>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 text-sm">
+          <p>© {new Date().getFullYear()} Decorizz. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="px-3 py-1 rounded-full border text-xs">Visa</span>
+            <span className="px-3 py-1 rounded-full border text-xs">MasterCard</span>
+            <span className="px-3 py-1 rounded-full border text-xs">UPI</span>
+            <span className="px-3 py-1 rounded-full border text-xs">COD (partial)</span>
+          </div>
+          <div className="flex gap-4">
+            <Link to="/terms" className="hover:underline">Terms</Link>
+            <Link to="/privacy" className="hover:underline">Privacy</Link>
+            <Link to="/refunds" className="hover:underline">Refunds</Link>
+          </div>
+        </div>
       </div>
     </footer>
   );

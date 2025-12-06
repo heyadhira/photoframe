@@ -58,6 +58,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const cleanupDbSelected = async (prefixes: string[], includeUsers = false) => {
+    if (!prefixes || prefixes.length === 0) { alert('Select at least one table prefix'); return; }
+    setCleaning(true);
+    try {
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/admin/cleanup`, {
+        method: 'POST', headers: { 'Content-Type':'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ prefixes, includeUsers })
+      });
+      const d = await res.json();
+      setCleanResult(d);
+      fetchStats();
+    } catch (e) {
+      setCleanResult({ error: 'Request failed' });
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   const cleanupDb = async (includeUsers = false) => {
     if (!confirm(includeUsers ? 'This will wipe ALL data including users. Continue?' : 'This will wipe content data (products, orders, videos, etc.). Continue?')) return;
     setCleaning(true);
@@ -143,10 +160,10 @@ export default function AdminDashboard() {
       <AdminSidebar onSidebarWidthChange={(w) => setSidebarWidth(w)} />
 
       {/* MAIN CONTENT */}
-      <div className="w-full pt-16 p-4 md:p-10" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
+      <div className="w-full pt-24 p-4 md:p-10" style={{ marginLeft: isDesktop ? sidebarWidth : 0 }}>
 
         {/* PAGE TITLE */}
-        <h1 className="text-4xl font-bold text-gray-900 mb-10 tracking-tight">
+        <h1 className="text-4xl font-bold text-gray-900 mb-10 tracking-tight pb-6">
           Admin Dashboard
         </h1>
 
@@ -160,11 +177,11 @@ export default function AdminDashboard() {
             {/* ============================ */}
             {/* STATS GRID */}
             {/* ============================ */}
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-14">
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pb-6 mb-14">
   {statCards.map((stat, i) => (
     <div
       key={i}
-      className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition"
     >
       <div
         className={`${stat.bg} w-14 h-14 rounded-xl flex items-center justify-center mb-4`}
@@ -181,7 +198,7 @@ export default function AdminDashboard() {
             {/* ============================ */}
             {/* QUICK ACTIONS */}
             {/* ============================ */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-8">
                 Quick Actions
               </h2>
@@ -191,7 +208,7 @@ export default function AdminDashboard() {
                   <Link
                     key={index}
                     to={link.path}
-                    className="block p-6 rounded-xl border border-gray-200 bg-gray-50 hover:bg-white hover:shadow transition"
+                    className="block p-6 rounded-lg border border-gray-200 bg-gray-50 hover:bg-white hover:shadow transition"
                   >
                     <h3 className="text-lg font-semibold text-gray-900">
                       {link.title}
@@ -201,12 +218,31 @@ export default function AdminDashboard() {
                     </p>
                   </Link>
                 ))}
-                <div className="p-6 rounded-xl border border-red-200 bg-red-50">
+                <div className="p-6 rounded-lg border border-red-200 bg-red-50">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Database Cleanup</h3>
-                  <p className="text-sm text-gray-600 mb-4">Wipe KV data like products, orders, videos, FAQs, testimonials, payments, carts, wishlists, contacts, notifications. Users retained by default.</p>
+                  <p className="text-sm text-gray-600 mb-4">Select tables to wipe. Users retained unless explicitly selected.</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                    {['product:','order:','cart:','wishlist:','testimonial:','gallery:','faq:','contact:','video:','video-like:','video-comment:','notification:','payment:','reset:','reset-email:','user:'].map((p) => (
+                      <label key={p} className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" value={p} className="w-4 h-4" style={{ accentColor: '#14b8a6' }} />
+                        <span>{p}</span>
+                      </label>
+                    ))}
+                  </div>
                   <div className="flex gap-3">
-                    <button onClick={()=>cleanupDb(false)} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" disabled={cleaning}>{cleaning ? 'Cleaning…' : 'Clean Content'}</button>
-                    <button onClick={()=>cleanupDb(true)} className="px-4 py-2 rounded-lg border border-red-600 text-red-700 hover:bg-red-100" disabled={cleaning}>Clean Including Users</button>
+                    <button
+                      onClick={() => {
+                        const checks = Array.from(document.querySelectorAll('input[type="checkbox"][value]')) as HTMLInputElement[];
+                        const prefixes = checks.filter(c => c.checked).map(c => c.value);
+                        const includeUsers = prefixes.includes('user:');
+                        cleanupDbSelected(prefixes, includeUsers);
+                      }}
+                      className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                      disabled={cleaning}
+                    >
+                      {cleaning ? 'Cleaning…' : 'Clean Selected'}
+                    </button>
+                    <button onClick={() => cleanupDb(true)} className="px-4 py-2 rounded-lg border border-red-600 text-red-700 hover:bg-red-100" disabled={cleaning}>Clean All (incl. Users)</button>
                   </div>
                   {cleanResult && (
                     <pre className="mt-3 text-xs bg-white p-3 rounded border overflow-auto max-h-36">{JSON.stringify(cleanResult, null, 2)}</pre>

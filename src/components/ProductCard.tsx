@@ -20,9 +20,10 @@ type Product = {
 type ProductCardProps = {
   product: Product;
   overridePrice?: number;
+  eyeNavigates?: boolean;
 };
 
-export function ProductCard({ product, overridePrice }: ProductCardProps) {
+export function ProductCard({ product, overridePrice, eyeNavigates }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [open, setOpen] = useState(false);
   const { user, accessToken } = useContext(AuthContext);
@@ -115,9 +116,9 @@ export function ProductCard({ product, overridePrice }: ProductCardProps) {
             <Heart className={`w-5 h-5 ${isWishlisted ? 'text-red-500' : 'text-gray-800'}`} />
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); setOpen(true); }}
+            onClick={eyeNavigates ? undefined : (e) => { e.preventDefault(); setOpen(true); }}
             className="p-2 rounded-full bg-white shadow hover:shadow-md"
-            title="Quick view"
+            title={eyeNavigates ? "View" : "Quick view"}
           >
             <Eye className="w-5 h-5 text-gray-800" />
           </button>

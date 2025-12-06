@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { MapPin, Phone, Mail, Search as SearchIcon, Send } from "lucide-react";
@@ -15,6 +15,7 @@ export default function ContactUsPage() {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [instaPosts, setInstaPosts] = useState<{ id: string; embedUrl: string }[]>([]);
 
   const update = (key: string, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -49,6 +50,16 @@ export default function ContactUsPage() {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-52d68140/instagram`);
+        const data = await res.json();
+        setInstaPosts((data.items || []).slice(0, 6));
+      } catch {}
+    })();
+  }, []);
 
   return (
     <div className="min-h-screen about-theme content-offset">
@@ -235,46 +246,54 @@ export default function ContactUsPage() {
         </div>
       </section>
 
-{/* INSTAGRAM SECTION */}
-{/* <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 mt-10">
-  <div className="text-center mb-8">
-    <h2 className="font-rashi text-4xl font-extrabold text-[#3b2f27]">
-      Follow Us on <span className="text-[#14b8a6]">Instagram</span>
-    </h2>
-    <p className="text-gray-600 mt-2">
-      Explore our latest frames, studio work, and customer stories
-    </p>
-  </div>
+      {/* Instagram Section */}
+      {/* <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 mt-10">
+        <div className="text-center mb-8">
+          <h2 className="font-rashi text-4xl font-extrabold text-[#3b2f27]">
+            Follow Us on <span className="text-[#14b8a6]">Instagram</span>
+          </h2>
+          <p className="text-gray-600 mt-2">
+            Explore our latest frames, studio work, and customer stories
+          </p>
+        </div>
 
+        {instaPosts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {instaPosts.map(p => (
+              <div key={p.id} className="soft-card p-4 rounded-3xl shadow-xl border border-gray-200 card-appear">
+                <iframe
+                  src={p.embedUrl}
+                  width="100%"
+                  height="520"
+                  className="w-full rounded-2xl"
+                  style={{ border: '0', overflow: 'hidden' }}
+                  scrolling="no"
+                  allowTransparency={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  sandbox="allow-scripts allow-same-origin allow-popups"
+                ></iframe>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="soft-card p-4 rounded-3xl shadow-xl border border-gray-200 card-appear">
+            <p className="text-center text-gray-600">No posts configured yet.</p>
+          </div>
+        )}
 
-  <div className="soft-card p-4 rounded-3xl shadow-xl border border-gray-200 card-appear">
-    <iframe
-      src="https://www.instagram.com/reel/C6yUqnnPqg1/embed"   // ✅ working embed
-      width="100%"
-      height="600"
-      className="w-full rounded-2xl"
-      style={{ border: "0", overflow: "hidden" }}
-      scrolling="no"
-      allowTransparency={true}
-      loading="lazy"
-    ></iframe>
-  </div>
-
-
-  <div className="text-center mt-6">
-    <a
-      href="https://www.instagram.com/decorizzdotcom/"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block px-8 py-3 rounded-full shadow-lg font-semibold text-white"
-      style={{ backgroundColor: "#14b8a6" }}
-    >
-      Follow @decorizzdotcom
-    </a>
-  </div>
-</section> */}
-
-
+        <div className="text-center mt-6">
+          <a
+            href="https://www.instagram.com/decorizzdotcom/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-8 py-3 rounded-full shadow-lg font-semibold text-white"
+            style={{ backgroundColor: '#14b8a6' }}
+          >
+            Follow @decorizzdotcom
+          </a>
+        </div>
+      </section> */}
 
       {/* MAP SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">

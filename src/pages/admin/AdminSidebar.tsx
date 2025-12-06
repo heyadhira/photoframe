@@ -14,6 +14,7 @@ import {
   Mail,
   HelpCircle,
   Film,
+  Instagram,
   LogOut,
   Menu,
   X,
@@ -68,11 +69,12 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
     { label: "Users", icon: Users, path: "/admin/users" },
     { label: "Gallery", icon: GalleryIcon, path: "/admin/gallery" },
     { label: "Payments", icon: CreditCard, path: "/admin/payments" },
-    { label: "Delivery", icon: Truck, path: "/admin/delivery" },
+    // { label: "Delivery", icon: Truck, path: "/admin/delivery" },
     { label: "Testimonials", icon: Star, path: "/admin/testimonials" },
     { label: "Contacts", icon: Mail, path: "/admin/contacts" },
     { label: "FAQs", icon: HelpCircle, path: "/admin/faqs" },
     { label: "Videos", icon: Film, path: "/admin/videos" },
+    // { label: "Instagram", icon: Instagram, path: "/admin/instagram" },
   ];
 
   return (
@@ -96,8 +98,8 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
       {/* SIDEBAR */}
       <aside
         className={`
-          fixed inset-y-0 left-0 bg-gray-900 text-white shadow-xl z-50
-          transition-all duration-300 flex flex-col
+          admin-sidebar fixed inset-y-0 left-0 bg-gray-900 text-white shadow-xl z-50
+          transition-transform duration-300 flex flex-col will-change-transform
           ${
             isMobile
               ? mobileOpen
@@ -122,7 +124,7 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
         </div>
 
         {/* MENU ITEMS */}
-        <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto pr-2">
           {menuItems.map(({ label, icon: Icon, path }) => {
             const active = location.pathname === path;
 
@@ -131,10 +133,8 @@ export default function AdminSidebar({ onSidebarWidthChange }: AdminSidebarProps
                 key={path}
                 to={path}
                 onClick={() => isMobile && setMobileOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                  active
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-300 hover:bg-gray-800"
+                className={`admin-nav-item flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  active ? "active" : "text-gray-300 hover:bg-gray-800"
                 }`}
               >
                 <Icon className="menu-icon w-5 h-5" />
